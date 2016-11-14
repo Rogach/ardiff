@@ -19,22 +19,22 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     static final byte ATTR_EXTERNAL_ATTRIBUTES = 6;
 
     @Override
-    String archiverName() {
+    public String archiverName() {
         return ArchiveStreamFactory.ZIP;
     }
 
     @Override
-    protected ZipArchiveEntry createNewArchiveEntry(String path) {
+    public ZipArchiveEntry createNewArchiveEntry(String path) {
         return new ZipArchiveEntry(path);
     }
 
     @Override
-    protected ZipArchiveEntry copyArchiveEntry(ZipArchiveEntry orig) throws IOException {
+    public ZipArchiveEntry copyArchiveEntry(ZipArchiveEntry orig) throws IOException {
         return new ZipArchiveEntry(orig);
     }
 
     @Override
-    protected void writeAttributes(ZipArchiveEntry entry, DataOutputStream diffStream) throws IOException {
+    public void writeAttributes(ZipArchiveEntry entry, DataOutputStream diffStream) throws IOException {
         if (entry.getExtra() != null) {
             diffStream.writeByte(ATTR_EXTRA);
             diffStream.writeShort(entry.getExtra().length);
@@ -64,7 +64,7 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    protected void readAttributes(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
+    public void readAttributes(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
         do {
             byte command = diffStream.readByte();
             if (command == 0) {
@@ -105,7 +105,7 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    protected boolean attributesEqual(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter) {
+    public boolean attributesEqual(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter) {
         return Arrays.equals(entryBefore.getExtra(), entryAfter.getExtra()) &&
                 Objects.deepEquals(entryBefore.getComment(), entryAfter.getComment()) &&
                 entryBefore.getVersionMadeBy() == entryAfter.getVersionMadeBy() &&
@@ -115,7 +115,7 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    protected void writeAttributesDiff(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter, DataOutputStream diffStream) throws IOException {
+    public void writeAttributesDiff(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter, DataOutputStream diffStream) throws IOException {
         if (!Arrays.equals(entryBefore.getExtra(), entryAfter.getExtra())) {
             diffStream.writeByte(ATTR_EXTRA);
 
