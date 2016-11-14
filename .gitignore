@@ -1,0 +1,6 @@
+**/.directory
+target/
+.~lock*
+*~
+.idea
+.idea_modules
