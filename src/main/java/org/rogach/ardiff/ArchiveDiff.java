@@ -19,11 +19,12 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
 
     static final String HEADER = "_ardiff_";
 
-    static final byte COMMAND_REPLACE = 1;
-    static final byte COMMAND_REMOVE = 2;
-    static final byte COMMAND_PATCH = 3;
-    static final byte COMMAND_ARCHIVE_PATCH = 4;
-    static final byte COMMAND_UPDATE_ATTRIBUTES = 5;
+    static final byte COMMAND_ADD = 1;
+    static final byte COMMAND_REPLACE = 2;
+    static final byte COMMAND_REMOVE = 3;
+    static final byte COMMAND_PATCH = 4;
+    static final byte COMMAND_ARCHIVE_PATCH = 5;
+    static final byte COMMAND_UPDATE_ATTRIBUTES = 6;
 
 
     public static void computeDiff(
@@ -157,8 +158,10 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
                 String path = readPath(diffStream);
                 ArchiveEntryWithData entryBefore = entries.get(path);
 
-                if (command == COMMAND_REPLACE) {
-                    entries.put(path, readEntryReplace(path, diffStream));
+                if (command == COMMAND_ADD) {
+                    entries.put(path, readEntryAdd(path, diffStream));
+                } else if (command == COMMAND_REPLACE) {
+                    entries.put(path, readEntryReplace(path, entryBefore.entry, diffStream));
                 } else if (command == COMMAND_REMOVE) {
                     entries.remove(path);
                 } else if (command == COMMAND_PATCH) {
@@ -206,7 +209,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
     }
 
     private void writeEntryAdded(ArchiveEntryWithData entryWithData, DataOutputStream diffStream) throws IOException {
-        diffStream.writeByte(COMMAND_REPLACE);
+        diffStream.writeByte(COMMAND_ADD);
         writePath(entryWithData.entry.getName(), diffStream);
 
         writeAttributes(entryWithData.entry, diffStream);
@@ -278,8 +281,20 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
 
     protected abstract GenArchiveEntry copyArchiveEntry(GenArchiveEntry orig) throws IOException;
 
-    private ArchiveEntryWithData readEntryReplace(String path, DataInputStream diffStream) throws IOException {
+    private ArchiveEntryWithData readEntryAdd(String path, DataInputStream diffStream) throws IOException {
         GenArchiveEntry entry = createNewArchiveEntry(path);
+
+        readAttributes(entry, diffStream);
+
+        int dataLength = diffStream.readInt();
+        byte[] data = new byte[dataLength];
+        diffStream.readFully(data);
+
+        return new ArchiveEntryWithData(entry, data);
+    }
+
+    private ArchiveEntryWithData readEntryReplace(String path, GenArchiveEntry before, DataInputStream diffStream) throws IOException {
+        GenArchiveEntry entry = copyArchiveEntry(before);
 
         readAttributes(entry, diffStream);
 
@@ -340,23 +355,39 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
         }
     }
 
-    public boolean archivesEqual(InputStream streamA, InputStream streamB) throws IOException, ArchiveException {
-        ArchiveInputStream archiveStreamA = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamA);
-        ArchiveInputStream archiveStreamB = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamB);
+    public boolean archivesEqual(InputStream streamBefore, InputStream streamAfter) throws IOException, ArchiveException {
+        ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamBefore);
+        ArchiveInputStream archiveStreamAfter = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamAfter);
 
-        HashMap<String, ArchiveEntryWithData> entriesA = readAllEntries(archiveStreamA);
-        HashMap<String, ArchiveEntryWithData> entriesB = readAllEntries(archiveStreamB);
+        HashMap<String, ArchiveEntryWithData> entriesBefore = readAllEntries(archiveStreamBefore);
+        HashMap<String, ArchiveEntryWithData> entriesAfter = readAllEntries(archiveStreamAfter);
 
-        return entriesA.size() == entriesB.size() &&
-                entriesA.keySet().stream().allMatch(path -> {
-                    ArchiveEntryWithData entryA = entriesA.get(path);
-                    ArchiveEntryWithData entryB = entriesB.get(path);
-                    if (entryB != null) {
-                        return attributesEqual(entryA.entry, entryB.entry) && Arrays.equals(entryA.data, entryB.data);
-                    } else {
-                        return false;
-                    }
-                });
+        for (String path : entriesBefore.keySet()) {
+            ArchiveEntryWithData entryBefore = entriesBefore.get(path);
+            ArchiveEntryWithData entryAfter = entriesAfter.get(path);
+            if (entryAfter != null) {
+                if (!attributesEqual(entryBefore.entry, entryAfter.entry)) {
+                    System.err.printf("attributes differ for entries at '%s'\n", path);
+                    return false;
+                }
+                if (!Arrays.equals(entryBefore.data, entryAfter.data)) {
+                    System.err.printf("data differs for entries at '%s'\n", path);
+                    return false;
+                }
+            } else {
+                System.err.printf("entry at '%s' was removed\n", path);
+                return false;
+            }
+        }
+
+        for (String path : entriesAfter.keySet()) {
+            if (!entriesBefore.containsKey(path)) {
+                System.err.printf("entry was added at '%s'\n", path);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected class ArchiveEntryWithData {

@@ -1,13 +1,11 @@
 package org.rogach.ardiff;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.StringBuilderWriter;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,7 +104,6 @@ public class DiffTests {
 
         for (String archiveBefore : archiveNames) {
             for (String archiveAfter : archiveNames) {
-                System.out.printf("testing %s, %s\n", archiveBefore, archiveAfter);
                 testDiffApplyInvariant("zip", "/zip-simple/" + archiveBefore, "/zip-simple/" + archiveAfter, false);
             }
         }

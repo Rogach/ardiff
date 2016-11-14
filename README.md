@@ -19,7 +19,7 @@ so I invented something that vaguely resembles BNF with C extensions.
   <diffEntry>[] # read until EOF or explicit zero command
 
 <diffEntry> ::=
-  command: int8 # replace (1), remove (2), patch (3), archive patch (4), update attributes (5)
+  command: int8 # add (1), replace (2), remove (3), patch (4), archive patch (5), update attributes (6)
   <path>
   <attributes> # omitted for remove command
   dataLength: int32 # omitted for remove and update attributes commands
