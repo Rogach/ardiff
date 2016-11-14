@@ -9,7 +9,7 @@ import java.io.FileInputStream;
 
 import static org.junit.Assert.assertEquals;
 
-public class ZipDiffTest {
+public class DiffTests {
 
     @Test
     public void testDiffSameFile() throws Exception {

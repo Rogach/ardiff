@@ -21,9 +21,9 @@ so I invented something that vaguely resembles BNF with C extensions.
 <diffEntry> ::=
   command: int8 # replace (1), remove (2), patch (3), archive patch (4), update attributes (5)
   <path>
-  <attributes>
-  dataLength: int32
-  data: int8[dataLength]
+  <attributes> # omitted for remove command
+  dataLength: int32 # omitted for remove and update attributes commands
+  data: int8[dataLength] # omitted for remove and update attributes commands
   checksum: int64 # crc32
 
 <path> ::=
