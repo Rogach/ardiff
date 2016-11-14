@@ -3,5 +3,9 @@ name := """ardiff"""
 autoScalaLibrary := false
 
 libraryDependencies ++= Seq(
-  "com.novocode" % "junit-interface" % "0.11" % "test"
+  "org.apache.commons" % "commons-compress" % "1.12",
+  "com.nothome" % "javaxdelta" % "2.0.1",
+
+  "com.novocode" % "junit-interface" % "0.11" % "test",
+  "commons-io" % "commons-io" % "2.5" % "test"
 )
