@@ -74,7 +74,7 @@ public class DiffTests {
 
         byte[] result = resultOutputStream.toByteArray();
 
-        ArchiveDiff archiveComparator = ArchiveDiff.comparatorForArchiveType(archiveType);
+        ArchiveComparator archiveComparator = ArchiveDiff.comparatorForArchiveType(archiveType);
         Assert.assertTrue(
                 String.format("diff-apply invariant failed between %s and %s", resourceBefore, resourceAfter),
                 archiveComparator.archivesEqual(new ByteArrayInputStream(after), new ByteArrayInputStream(result)));
