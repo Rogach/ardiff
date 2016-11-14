@@ -5,7 +5,7 @@ Utility to compute, store and apply diffs to archives.
 
 Motivation: simply using binary diffs on compressed archives results in huge diffs
 even for smallest archive content changes. Making diff utility aware of format
-specifics should result in huge diff size savings.
+specifics should result in big diff size savings.
 
 Diff file format
 ----------------

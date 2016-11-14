@@ -107,7 +107,7 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     @Override
     public boolean attributesEqual(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter) {
         return Arrays.equals(entryBefore.getExtra(), entryAfter.getExtra()) &&
-                Objects.deepEquals(entryBefore.getComment(), entryAfter.getComment()) &&
+                Objects.equals(entryBefore.getComment(), entryAfter.getComment()) &&
                 entryBefore.getVersionMadeBy() == entryAfter.getVersionMadeBy() &&
                 entryBefore.getTime() == entryAfter.getTime() &&
                 entryBefore.getInternalAttributes() == entryAfter.getInternalAttributes() &&

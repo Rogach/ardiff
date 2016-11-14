@@ -15,7 +15,7 @@ import java.util.zip.CheckedInputStream;
 public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         extends ArchiveDiffBase<GenArchiveEntry> {
 
-    default void applyDiff(
+    default void applyDiffImpl(
             InputStream before,
             InputStream diff,
             boolean assumeOrdering,

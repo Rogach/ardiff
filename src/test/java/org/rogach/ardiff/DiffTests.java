@@ -20,8 +20,6 @@ public class DiffTests {
         ArchiveDiff.computeDiff(
                 new ByteArrayInputStream(simpleArchive),
                 new ByteArrayInputStream(simpleArchive),
-                "zip",
-                false,
                 diffOutputStream
         );
 
@@ -39,18 +37,15 @@ public class DiffTests {
         ArchiveDiff.applyDiff(
                 new ByteArrayInputStream(simpleArchive),
                 new ByteArrayInputStream(emptyDiff),
-                "zip",
-                false,
                 resultOutputStream
         );
 
         byte[] result = resultOutputStream.toByteArray();
 
-        ZipArchiveDiff archiveComparator = new ZipArchiveDiff();
-        Assert.assertTrue(archiveComparator.archivesEqual(new ByteArrayInputStream(simpleArchive), new ByteArrayInputStream(result)));
+        Assert.assertTrue(ArchiveDiff.archivesAreEqual(new ByteArrayInputStream(simpleArchive), new ByteArrayInputStream(result)));
     }
 
-    void testDiffApplyInvariant(String archiveType, String resourceBefore, String resourceAfter, boolean assumeOrdering) throws Exception {
+    void testDiffApplyInvariant(String resourceBefore, String resourceAfter, boolean assumeOrdering) throws Exception {
         byte[] before = IOUtils.toByteArray(getClass().getResourceAsStream(resourceBefore));
         byte[] after = IOUtils.toByteArray(getClass().getResourceAsStream(resourceAfter));
 
@@ -58,8 +53,6 @@ public class DiffTests {
         ArchiveDiff.computeDiff(
                 new ByteArrayInputStream(before),
                 new ByteArrayInputStream(after),
-                archiveType,
-                assumeOrdering,
                 diffOutputStream
         );
         byte[] diff = diffOutputStream.toByteArray();
@@ -68,17 +61,14 @@ public class DiffTests {
         ArchiveDiff.applyDiff(
                 new ByteArrayInputStream(before),
                 new ByteArrayInputStream(diff),
-                archiveType,
-                assumeOrdering,
                 resultOutputStream
         );
 
         byte[] result = resultOutputStream.toByteArray();
 
-        ArchiveComparator archiveComparator = ArchiveDiff.comparatorForArchiveType(archiveType);
         Assert.assertTrue(
                 String.format("diff-apply invariant failed between %s and %s", resourceBefore, resourceAfter),
-                archiveComparator.archivesEqual(new ByteArrayInputStream(after), new ByteArrayInputStream(result)));
+                ArchiveDiff.archivesAreEqual(new ByteArrayInputStream(after), new ByteArrayInputStream(result)));
     }
 
     @Test
@@ -105,7 +95,7 @@ public class DiffTests {
 
         for (String archiveBefore : archiveNames) {
             for (String archiveAfter : archiveNames) {
-                testDiffApplyInvariant("zip", "/zip-simple/" + archiveBefore, "/zip-simple/" + archiveAfter, false);
+                testDiffApplyInvariant("/zip-simple/" + archiveBefore, "/zip-simple/" + archiveAfter, false);
             }
         }
     }
