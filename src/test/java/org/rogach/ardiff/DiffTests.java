@@ -3,6 +3,7 @@ package org.rogach.ardiff;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -107,5 +108,33 @@ public class DiffTests {
                 testDiffApplyInvariant("zip", "/zip-simple/" + archiveBefore, "/zip-simple/" + archiveAfter, false);
             }
         }
+    }
+
+    @Test(expected = ArchiveDiffCorruptedException.class)
+    public void testDiffCorruption() throws Exception {
+        byte[] before = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a1_b1_c1.zip"));
+        byte[] after = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a2_b2_c2.zip"));
+
+        ByteArrayOutputStream diffOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.computeDiff(
+                new ByteArrayInputStream(before),
+                new ByteArrayInputStream(after),
+                "zip",
+                false,
+                diffOutputStream
+        );
+        byte[] diff = diffOutputStream.toByteArray();
+
+        // corrupt the byte
+        diff[42] = 0;
+
+        ByteArrayOutputStream resultOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.applyDiff(
+                new ByteArrayInputStream(before),
+                new ByteArrayInputStream(diff),
+                "zip",
+                false,
+                resultOutputStream
+        );
     }
 }
