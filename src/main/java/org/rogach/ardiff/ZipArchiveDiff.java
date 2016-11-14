@@ -105,13 +105,13 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    protected boolean areAttributesDifferent(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter) {
-        return !Arrays.equals(entryBefore.getExtra(), entryAfter.getExtra()) ||
-                !Objects.deepEquals(entryBefore.getComment(), entryAfter.getComment()) ||
-                entryBefore.getVersionMadeBy() != entryAfter.getVersionMadeBy() ||
-                entryBefore.getTime() != entryAfter.getTime() ||
-                entryBefore.getInternalAttributes() != entryAfter.getInternalAttributes() ||
-                entryBefore.getExternalAttributes() != entryAfter.getExternalAttributes();
+    protected boolean attributesEqual(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter) {
+        return Arrays.equals(entryBefore.getExtra(), entryAfter.getExtra()) &&
+                Objects.deepEquals(entryBefore.getComment(), entryAfter.getComment()) &&
+                entryBefore.getVersionMadeBy() == entryAfter.getVersionMadeBy() &&
+                entryBefore.getTime() == entryAfter.getTime() &&
+                entryBefore.getInternalAttributes() == entryAfter.getInternalAttributes() &&
+                entryBefore.getExternalAttributes() == entryAfter.getExternalAttributes();
     }
 
     @Override

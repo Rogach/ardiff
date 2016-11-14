@@ -1,30 +1,50 @@
 package org.rogach.ardiff;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-
-import static org.junit.Assert.assertEquals;
 
 public class DiffTests {
 
     @Test
     public void testDiffSameFile() throws Exception {
+        byte[] simpleArchive = IOUtils.toByteArray(getClass().getResourceAsStream("/f2.zip"));
+
         ByteArrayOutputStream diffOutputStream = new ByteArrayOutputStream();
         ArchiveDiff.computeDiff(
-                new FileInputStream("src/test/resources/f2.zip"),
-                new FileInputStream("src/test/resources/f2.zip"),
+                new ByteArrayInputStream(simpleArchive),
+                new ByteArrayInputStream(simpleArchive),
                 "zip",
                 false,
                 diffOutputStream
         );
 
-        FileUtils.writeByteArrayToFile(new File("/home/platon/Tor/diff.bin"), diffOutputStream.toByteArray());
+        byte[] emptyDiff = diffOutputStream.toByteArray();
+        Assert.assertEquals(8, emptyDiff.length);
+        Assert.assertArrayEquals(ArchiveDiff.HEADER.getBytes("ASCII"), emptyDiff);
+    }
 
-        assertEquals(8, diffOutputStream.toByteArray().length);
+    @Test
+    public void testApplyEmptyDiff() throws Exception {
+        byte[] simpleArchive = IOUtils.toByteArray(getClass().getResourceAsStream("/f2.zip"));
+        byte[] emptyDiff = ArchiveDiff.HEADER.getBytes("ASCII");
+
+        ByteArrayOutputStream resultOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.applyDiff(
+                new ByteArrayInputStream(simpleArchive),
+                new ByteArrayInputStream(emptyDiff),
+                "zip",
+                false,
+                resultOutputStream
+        );
+
+        byte[] result = resultOutputStream.toByteArray();
+
+        ZipArchiveDiff archiveComparator = new ZipArchiveDiff();
+        Assert.assertTrue(archiveComparator.archivesEqual(new ByteArrayInputStream(simpleArchive), new ByteArrayInputStream(result)));
     }
 
 }

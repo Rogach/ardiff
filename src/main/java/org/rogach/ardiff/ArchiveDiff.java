@@ -3,15 +3,14 @@ package org.rogach.ardiff;
 import com.nothome.delta.Delta;
 import com.nothome.delta.GDiffPatcher;
 import org.apache.commons.compress.archivers.*;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
+import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import org.rogach.ardiff.exceptions.ArchiveDiffFormatException;
 
 import java.io.*;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
@@ -26,6 +25,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
     static final byte COMMAND_ARCHIVE_PATCH = 4;
     static final byte COMMAND_UPDATE_ATTRIBUTES = 5;
 
+
     public static void computeDiff(
             InputStream before,
             InputStream after,
@@ -39,6 +39,21 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
             throw new RuntimeException("Unsupported archive type: " + archiveType);
         }
     }
+
+    public static void applyDiff(
+            InputStream before,
+            InputStream diff,
+            String archiveType,
+            boolean assumeOrdering,
+            OutputStream after
+    ) throws ArchiveException, IOException, ArchiveDiffException {
+        if ("zip".equals(archiveType)) {
+            new ZipArchiveDiff().applyDiff(before, diff, assumeOrdering, after);
+        } else {
+            throw new RuntimeException("Unsupported archive type: " + archiveType);
+        }
+    }
+
 
     abstract String archiverName();
 
@@ -195,7 +210,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
     protected abstract void writeAttributes(GenArchiveEntry entry, DataOutputStream diffStream) throws IOException;
 
     private boolean writeEntryDiff(ArchiveEntryWithData entryBefore, ArchiveEntryWithData entryAfter, DataOutputStream diffStream) throws IOException {
-        boolean attributesDifferent = areAttributesDifferent(entryBefore.entry, entryAfter.entry);
+        boolean attributesDifferent = !attributesEqual(entryBefore.entry, entryAfter.entry);
         boolean dataDifferent = !Arrays.equals(entryBefore.data, entryAfter.data);
 
         if (!attributesDifferent && !dataDifferent) {
@@ -246,7 +261,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
         return true;
     }
 
-    protected abstract boolean areAttributesDifferent(GenArchiveEntry entryBefore, GenArchiveEntry entryAfter);
+    protected abstract boolean attributesEqual(GenArchiveEntry entryBefore, GenArchiveEntry entryAfter);
 
     protected abstract void writeAttributesDiff(GenArchiveEntry entryBefore, GenArchiveEntry entryAfter, DataOutputStream diffStream) throws IOException;
 
@@ -305,16 +320,35 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
         return new String(bytes, "UTF-8");
     }
 
-    private boolean isSupportedArchive(ArchiveEntry entry) {
+    private static boolean isSupportedArchive(ArchiveEntry entry) {
         return getArchiverType(entry) != null;
     }
 
-    private String getArchiverType(ArchiveEntry entry) {
+    private static String getArchiverType(ArchiveEntry entry) {
         if (entry.getName().endsWith(".zip")) {
             return "zip";
         } else {
             return null;
         }
+    }
+
+    public boolean archivesEqual(InputStream streamA, InputStream streamB) throws IOException, ArchiveException {
+        ArchiveInputStream archiveStreamA = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamA);
+        ArchiveInputStream archiveStreamB = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamB);
+
+        HashMap<String, ArchiveEntryWithData> entriesA = readAllEntries(archiveStreamA);
+        HashMap<String, ArchiveEntryWithData> entriesB = readAllEntries(archiveStreamB);
+
+        return entriesA.size() == entriesB.size() &&
+                entriesA.keySet().stream().allMatch(path -> {
+                    ArchiveEntryWithData entryA = entriesA.get(path);
+                    ArchiveEntryWithData entryB = entriesB.get(path);
+                    if (entryB != null) {
+                        return attributesEqual(entryA.entry, entryB.entry) && Arrays.equals(entryA.data, entryB.data);
+                    } else {
+                        return false;
+                    }
+                });
     }
 
     protected class ArchiveEntryWithData {
