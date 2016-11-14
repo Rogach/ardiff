@@ -34,7 +34,6 @@ so I invented something that vaguely resembles BNF with C extensions.
   attrs: <attribute>[] # read until zero command is found
 
 <attributeEntry> ::=
-  command: int8 # replace (1), remove (2)
   code: int8
   *attribute-specific data*
 ```
