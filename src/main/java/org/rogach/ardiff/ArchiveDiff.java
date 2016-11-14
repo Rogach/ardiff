@@ -54,6 +54,14 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry> {
         }
     }
 
+    public static ArchiveDiff comparatorForArchiveType(String archiveType) {
+        if ("zip".equals(archiveType)) {
+            return new ZipArchiveDiff();
+        } else {
+            throw new RuntimeException("Unsupported archive type: " + archiveType);
+        }
+    }
+
 
     abstract String archiverName();
 

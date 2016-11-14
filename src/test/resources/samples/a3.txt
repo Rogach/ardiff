@@ -1,0 +1,16 @@
+I myself have dreamed up a structure intermediate between Dyson spheres
+and planets.  Build a ring 93 million miles in radius -- one Earth orbit
+-- around the sun.  If we have the mass of Jupiter to work with, and if
+we make it a thousand miles wide, we get a thickness of about a thousand
+feet for the base.
+
+And it has advantages.  The Ringworld will be much sturdier than a Dyson
+sphere.  We can spin it on its axis for gravity.  A rotation speed of 770
+m/s will give us a gravity of one Earth normal.  We wouldn't even need to
+roof it over.  Place walls one thousand miles high at each edge, facing the
+sun.  Very little air will leak over the edges.
+
+Lord knows the thing is roomy enough.  With three million times the surface
+area of the Earth, it will be some time before anyone complains of the
+crowding.
+		-- Larry Niven, "Ringworld"
