@@ -211,11 +211,10 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
         archiveStreamAfter.putArchiveEntry(newEntry);
 
         ArchiveDiff.applyDiff(
-                archiveStreamBefore,
+                new BufferedInputStream(archiveStreamBefore, 64),
                 new BoundedInputStream(diffStream, patchLength),
-                ArchiveDiff.archiveTypeFromName(commandPath),
-                true,
-                archiveStreamAfter
+                archiveStreamAfter,
+                true
         );
 
         archiveStreamAfter.closeArchiveEntry();
