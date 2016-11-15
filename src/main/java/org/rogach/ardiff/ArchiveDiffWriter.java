@@ -5,6 +5,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
 import java.io.*;
 import java.util.Arrays;
@@ -20,7 +21,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
             InputStream after,
             boolean assumeOrdering,
             OutputStream diff
-    ) throws ArchiveException, IOException {
+    ) throws ArchiveException, ArchiveDiffException, IOException {
         ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
         ArchiveInputStream archiveStreamAfter = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), after);
 
@@ -42,7 +43,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                 if (entryAfter == null) {
                     writeEntryRemoved(entryBefore.entry, diffStream);
                 } else {
-                    boolean entryWritten = writeEntryDiff(entryBefore, entryAfter, diffStream);
+                    boolean entryWritten = writeEntryDiff(entryBefore, entryAfter, false, diffStream);
                     if (!entryWritten) continue;
                 }
 
@@ -64,7 +65,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
             throw new UnsupportedOperationException("Diff for sorted archives is not yet implemented");
         }
 
-        diffStream.close();
+        diffStream.writeByte(0);
     }
 
 
@@ -85,7 +86,13 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
     void writeAttributes(GenArchiveEntry entry, DataOutputStream diffStream) throws IOException;
 
-    default boolean writeEntryDiff(ArchiveEntryWithData<GenArchiveEntry> entryBefore, ArchiveEntryWithData<GenArchiveEntry> entryAfter, DataOutputStream diffStream) throws IOException {
+    default boolean writeEntryDiff(
+            ArchiveEntryWithData<GenArchiveEntry> entryBefore,
+            ArchiveEntryWithData<GenArchiveEntry> entryAfter,
+            boolean assumeOrdering,
+            DataOutputStream diffStream
+    ) throws IOException, ArchiveDiffException, ArchiveException {
+
         boolean attributesDifferent = !attributesEqual(entryBefore.entry, entryAfter.entry);
         boolean dataDifferent = !Arrays.equals(entryBefore.data, entryAfter.data);
 
@@ -100,7 +107,18 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
             writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
         } else {
             if (ArchiveDiff.isSupportedArchive(entryAfter.entry)) {
-                throw new UnsupportedOperationException("Diff for recursive archives is not yet implemented");
+                diffStream.writeByte(ArchiveDiff.COMMAND_ARCHIVE_PATCH);
+                writePath(entryAfter.entry.getName(), diffStream);
+
+                writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
+
+                ArchiveDiff.computeDiff(
+                        new ByteArrayInputStream(entryBefore.data),
+                        new ByteArrayInputStream(entryAfter.data),
+                        diffStream,
+                        assumeOrdering
+                );
+
             } else {
                 ByteArrayOutputStream entryDiffByteArrayOutputStream = new ByteArrayOutputStream();
                 new Delta().compute(entryBefore.data, entryAfter.data, entryDiffByteArrayOutputStream);

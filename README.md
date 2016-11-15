@@ -16,13 +16,14 @@ so I invented something that vaguely resembles BNF with C extensions.
 ```
 <file> ::=
   "_ardiff_" # magic bytes
-  <diffEntry>[] # read until EOF or explicit zero command
+  <diffEntry>[]
+  0
 
 <diffEntry> ::=
   command: int8 # add (1), replace (2), remove (3), patch (4), archive patch (5), update attributes (6)
   <path>
   <attributes> # omitted for remove command
-  dataLength: int32 # omitted for remove and update attributes commands
+  dataLength: int32 # omitted for remove, update attributes and archive patch commands
   data: int8[dataLength] # omitted for remove and update attributes commands
   checksum: int64 # crc32
 
@@ -31,9 +32,10 @@ so I invented something that vaguely resembles BNF with C extensions.
   name: int8[length]
 
 <attributes> ::=
-  attrs: <attribute>[] # read until zero command is found
+  attrs: <attribute>[]
+  0
 
-<attributeEntry> ::=
+<attribute> ::=
   code: int8
   *attribute-specific data*
 ```

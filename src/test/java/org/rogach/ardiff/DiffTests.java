@@ -8,6 +8,7 @@ import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DiffTests {
@@ -22,16 +23,18 @@ public class DiffTests {
                 new ByteArrayInputStream(simpleArchive),
                 diffOutputStream
         );
+        diffOutputStream.close();
 
         byte[] emptyDiff = diffOutputStream.toByteArray();
-        Assert.assertEquals(8, emptyDiff.length);
-        Assert.assertArrayEquals(ArchiveDiff.HEADER.getBytes("ASCII"), emptyDiff);
+        Assert.assertEquals(9, emptyDiff.length);
+        Assert.assertArrayEquals(ArchiveDiff.HEADER.getBytes("ASCII"), Arrays.copyOf(emptyDiff, 8));
+        Assert.assertEquals(0, emptyDiff[8]);
     }
 
     @Test
     public void testZipApplyEmptyDiff() throws Exception {
-        byte[] simpleArchive = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a1_b1_c1.zip"));
-        byte[] emptyDiff = ArchiveDiff.HEADER.getBytes("ASCII");
+        byte[] simpleArchive = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/__c1.zip"));
+        byte[] emptyDiff = (ArchiveDiff.HEADER + '\0').getBytes("ASCII");
 
         ByteArrayOutputStream resultOutputStream = new ByteArrayOutputStream();
         ArchiveDiff.applyDiff(
@@ -39,6 +42,7 @@ public class DiffTests {
                 new ByteArrayInputStream(emptyDiff),
                 resultOutputStream
         );
+        resultOutputStream.close();
 
         byte[] result = resultOutputStream.toByteArray();
 
@@ -55,6 +59,8 @@ public class DiffTests {
                 new ByteArrayInputStream(after),
                 diffOutputStream
         );
+        diffOutputStream.close();
+
         byte[] diff = diffOutputStream.toByteArray();
 
         ByteArrayOutputStream resultOutputStream = new ByteArrayOutputStream();
@@ -63,6 +69,7 @@ public class DiffTests {
                 new ByteArrayInputStream(diff),
                 resultOutputStream
         );
+        resultOutputStream.close();
 
         byte[] result = resultOutputStream.toByteArray();
 
@@ -100,6 +107,36 @@ public class DiffTests {
         }
     }
 
+    @Test
+    public void testRecursiveZips() throws Exception {
+        List<String> archiveNames = new ArrayList<>();
+        for (int a = 0; a <= 3; a++) {
+            for (int b = 0; b <= 3; b++) {
+                for (int c = 0; c <= 3; c++) {
+                    StringBuilder name = new StringBuilder();
+                    if (a > 0) name.append("a" + a);
+                    name.append("_r_");
+                    if (b > 0) name.append("b" + b);
+                    name.append("_");
+                    if (c > 0) name.append("c" + c);
+                    name.append(".zip");
+
+                    // skip empty archive
+                    if (a > 0 || b > 0 || c > 0) {
+                        archiveNames.add(name.toString());
+                    }
+                }
+            }
+        }
+
+        for (String archiveBefore : archiveNames) {
+            for (String archiveAfter : archiveNames) {
+                System.out.printf("%s vs %s\n", archiveBefore, archiveAfter);
+                testDiffApplyInvariant("/zip-recursive/" + archiveBefore, "/zip-recursive/" + archiveAfter, false);
+            }
+        }
+    }
+
     @Test(expected = ArchiveDiffCorruptedException.class)
     public void testDiffCorruption() throws Exception {
         byte[] before = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a1_b1_c1.zip"));
@@ -113,6 +150,8 @@ public class DiffTests {
                 false,
                 diffOutputStream
         );
+        diffOutputStream.close();
+
         byte[] diff = diffOutputStream.toByteArray();
 
         // corrupt the byte
@@ -126,5 +165,6 @@ public class DiffTests {
                 false,
                 resultOutputStream
         );
+        resultOutputStream.close();
     }
 }

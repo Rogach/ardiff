@@ -53,7 +53,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             String archiveType,
             boolean assumeOrdering,
             OutputStream diff
-    ) throws ArchiveException, IOException {
+    ) throws ArchiveException, ArchiveDiffException, IOException {
         if ("zip".equals(archiveType)) {
             new ZipArchiveDiff().computeDiff(before, after, assumeOrdering, diff);
         } else {
@@ -87,7 +87,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             OutputStream after
     ) throws ArchiveException, IOException, ArchiveDiffException {
         if ("zip".equals(archiveType)) {
-            new ZipArchiveDiff().applyDiffImpl(before, diff, assumeOrdering, after);
+            new ZipArchiveDiff().applyDiff(before, diff, assumeOrdering, after);
         } else {
             throw new RuntimeException("Unsupported archive type: " + archiveType);
         }

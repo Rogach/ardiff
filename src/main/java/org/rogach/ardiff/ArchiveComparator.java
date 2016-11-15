@@ -4,7 +4,9 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -12,7 +14,7 @@ import java.util.HashMap;
 
 public interface ArchiveComparator<GenArchiveEntry extends ArchiveEntry> extends ArchiveDiffBase<GenArchiveEntry> {
 
-    default boolean archivesEqual(InputStream streamBefore, InputStream streamAfter) throws IOException, ArchiveException {
+    default boolean archivesEqual(InputStream streamBefore, InputStream streamAfter) throws IOException, ArchiveException, ArchiveDiffException {
         ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamBefore);
         ArchiveInputStream archiveStreamAfter = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamAfter);
 
@@ -27,9 +29,17 @@ public interface ArchiveComparator<GenArchiveEntry extends ArchiveEntry> extends
                     System.err.printf("attributes differ for entries at '%s'\n", path);
                     return false;
                 }
-                if (!Arrays.equals(entryBefore.data, entryAfter.data)) {
-                    System.err.printf("data differs for entries at '%s'\n", path);
-                    return false;
+
+                if (ArchiveDiff.isSupportedArchive(entryAfter.entry)) {
+                    if (!ArchiveDiff.archivesAreEqual(new ByteArrayInputStream(entryBefore.data), new ByteArrayInputStream(entryAfter.data))) {
+                        System.err.printf("archive contents differ for entries at '%s'\n", path);
+                        return false;
+                    }
+                } else {
+                    if (!Arrays.equals(entryBefore.data, entryAfter.data)) {
+                        System.err.printf("data differs for entries at '%s'\n", path);
+                        return false;
+                    }
                 }
             } else {
                 System.err.printf("entry at '%s' was removed\n", path);

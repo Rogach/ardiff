@@ -2,8 +2,10 @@ package org.rogach.ardiff;
 
 import com.nothome.delta.GDiffPatcher;
 import org.apache.commons.compress.archivers.*;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
+import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import org.rogach.ardiff.exceptions.ArchiveDiffFormatException;
 
 import java.io.*;
@@ -15,12 +17,12 @@ import java.util.zip.CheckedInputStream;
 public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         extends ArchiveDiffBase<GenArchiveEntry> {
 
-    default void applyDiffImpl(
+    default void applyDiff(
             InputStream before,
             InputStream diff,
             boolean assumeOrdering,
             OutputStream after
-    ) throws ArchiveException, IOException, ArchiveDiffFormatException, ArchiveDiffCorruptedException {
+    ) throws ArchiveException, IOException, ArchiveDiffException {
         ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
         CheckedInputStream checkedDiffStream = new CheckedInputStream(diff, new CRC32());
         DataInputStream diffStream = new DataInputStream(checkedDiffStream);
@@ -40,13 +42,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             do {
                 checkedDiffStream.getChecksum().reset();
 
-                byte command;
-
-                try {
-                    command = diffStream.readByte();
-                } catch (EOFException ex) {
-                    command = 0;
-                }
+                byte command = diffStream.readByte();
 
                 if (command == 0) {
                     break;
@@ -64,7 +60,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
                 } else if (command == ArchiveDiff.COMMAND_PATCH) {
                     entries.put(path, readEntryPatch(entryBefore, diffStream));
                 } else if (command == ArchiveDiff.COMMAND_ARCHIVE_PATCH) {
-                    throw new UnsupportedOperationException("Patch for recursive archives is not yet implemented");
+                    entries.put(path, readEntryArchivePatch(entryBefore, diffStream));
                 } else if (command == ArchiveDiff.COMMAND_UPDATE_ATTRIBUTES) {
                     entries.put(path, readEntryUpdateAttributes(entryBefore, diffStream));
                 }
@@ -77,6 +73,11 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             } while (true);
 
             for (ArchiveEntryWithData<GenArchiveEntry> entry : entries.values()) {
+                CRC32 checksum = new CRC32();
+                checksum.update(entry.data);
+                ((ZipArchiveEntry) entry.entry).setCrc(checksum.getValue());
+                ((ZipArchiveEntry) entry.entry).setSize(entry.data.length);
+
                 archiveStreamAfter.putArchiveEntry(entry.entry);
                 IOUtils.copy(new ByteArrayInputStream(entry.data), archiveStreamAfter);
                 archiveStreamAfter.closeArchiveEntry();
@@ -85,7 +86,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             throw new UnsupportedOperationException("Diff for sorted archives is not yet implemented");
         }
 
-        archiveStreamAfter.close();
+        archiveStreamAfter.finish();
     }
 
     GenArchiveEntry createNewArchiveEntry(String path);
@@ -128,6 +129,22 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         byte[] dataAfter = new GDiffPatcher().patch(entryBefore.data, patch);
 
         return new ArchiveEntryWithData<>(entryAfter, dataAfter);
+    }
+
+    default ArchiveEntryWithData<GenArchiveEntry> readEntryArchivePatch(ArchiveEntryWithData<GenArchiveEntry> entryBefore, DataInputStream diffStream) throws IOException, ArchiveDiffException, ArchiveException {
+        GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry);
+
+        readAttributes(entryAfter, diffStream);
+
+        ByteArrayOutputStream after = new ByteArrayOutputStream();
+        ArchiveDiff.applyDiff(
+                new ByteArrayInputStream(entryBefore.data),
+                diffStream,
+                after
+        );
+        after.close();
+
+        return new ArchiveEntryWithData<>(entryAfter, after.toByteArray());
     }
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryUpdateAttributes(ArchiveEntryWithData<GenArchiveEntry> entryBefore, DataInputStream diffStream) throws IOException {
