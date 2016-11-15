@@ -133,15 +133,6 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
         }
     }
 
-    public static String archiveTypeFromName(String name) {
-        name = name.toLowerCase();
-        if (name.endsWith("zip") || name.endsWith("jar")) {
-            return "zip";
-        } else {
-            throw new RuntimeException("Unable to determine archive type from name: " + name);
-        }
-    }
-
     static boolean isSupportedArchive(ArchiveEntry entry) {
         return getArchiverType(entry) != null;
     }
