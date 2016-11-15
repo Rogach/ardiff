@@ -23,6 +23,7 @@ so I invented something that vaguely resembles BNF with C extensions.
   command: int8 # add (1), replace (2), remove (3), patch (4), archive patch (5), update attributes (6)
   <path>
   <attributes> # omitted for remove command
+  resultChecksumAndLength # variable (per format), omitted for remove, update attributes
   dataLength: int32 # omitted for remove, update attributes and archive patch commands
   data: int8[dataLength] # omitted for remove and update attributes commands
   checksum: int64 # crc32

@@ -131,7 +131,6 @@ public class DiffTests {
 
         for (String archiveBefore : archiveNames) {
             for (String archiveAfter : archiveNames) {
-                System.out.printf("%s vs %s\n", archiveBefore, archiveAfter);
                 testDiffApplyInvariant("/zip-recursive/" + archiveBefore, "/zip-recursive/" + archiveAfter, false);
             }
         }

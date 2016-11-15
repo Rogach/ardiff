@@ -73,11 +73,6 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             } while (true);
 
             for (ArchiveEntryWithData<GenArchiveEntry> entry : entries.values()) {
-                CRC32 checksum = new CRC32();
-                checksum.update(entry.data);
-                ((ZipArchiveEntry) entry.entry).setCrc(checksum.getValue());
-                ((ZipArchiveEntry) entry.entry).setSize(entry.data.length);
-
                 archiveStreamAfter.putArchiveEntry(entry.entry);
                 IOUtils.copy(new ByteArrayInputStream(entry.data), archiveStreamAfter);
                 archiveStreamAfter.closeArchiveEntry();
@@ -98,6 +93,8 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
 
         readAttributes(entry, diffStream);
 
+        readEntrySizeAndChecksum(entry, diffStream);
+
         int dataLength = diffStream.readInt();
         byte[] data = new byte[dataLength];
         diffStream.readFully(data);
@@ -110,6 +107,8 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
 
         readAttributes(entry, diffStream);
 
+        readEntrySizeAndChecksum(entry, diffStream);
+
         int dataLength = diffStream.readInt();
         byte[] data = new byte[dataLength];
         diffStream.readFully(data);
@@ -121,6 +120,8 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry);
 
         readAttributes(entryAfter, diffStream);
+
+        readEntrySizeAndChecksum(entryAfter, diffStream);
 
         int patchLength = diffStream.readInt();
         byte[] patch = new byte[patchLength];
@@ -135,6 +136,8 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry);
 
         readAttributes(entryAfter, diffStream);
+
+        readEntrySizeAndChecksum(entryAfter, diffStream);
 
         ByteArrayOutputStream after = new ByteArrayOutputStream();
         ArchiveDiff.applyDiff(
@@ -154,6 +157,8 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
 
         return new ArchiveEntryWithData<>(entryAfter, entryBefore.data);
     }
+
+    void readEntrySizeAndChecksum(GenArchiveEntry entry, DataInputStream diffStream) throws IOException;
 
     void readAttributes(GenArchiveEntry entry, DataInputStream diffStream) throws IOException;
 
