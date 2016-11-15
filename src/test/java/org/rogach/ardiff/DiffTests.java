@@ -1,5 +1,8 @@
 package org.rogach.ardiff;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -7,6 +10,8 @@ import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -165,5 +170,64 @@ public class DiffTests {
                 resultOutputStream
         );
         resultOutputStream.close();
+    }
+
+    @Test
+    public void testArchiveSorting() throws Exception {
+        byte[] unsorted = IOUtils.toByteArray(getClass().getResourceAsStream("/unsorted.zip"));
+
+        ByteArrayOutputStream sortedOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.sortArchiveEntries(
+                new ByteArrayInputStream(unsorted),
+                sortedOutputStream
+        );
+        sortedOutputStream.close();
+
+        byte[] sorted = sortedOutputStream.toByteArray();
+
+        ensureArchiveSorted(new ByteArrayInputStream(sorted), "zip");
+    }
+
+    @Test
+    public void testArchiveSortingRecursive() throws Exception {
+        byte[] unsorted = IOUtils.toByteArray(getClass().getResourceAsStream("/unsorted-recursive.zip"));
+
+        ByteArrayOutputStream sortedOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.sortArchiveEntries(
+                new ByteArrayInputStream(unsorted),
+                sortedOutputStream
+        );
+        sortedOutputStream.close();
+
+        byte[] sorted = sortedOutputStream.toByteArray();
+
+        ensureArchiveSorted(new ByteArrayInputStream(sorted), "zip");
+    }
+
+    private void ensureArchiveSorted(InputStream input, String archiveType) throws Exception {
+        ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(archiveType, input);
+
+        String lastName = "";
+        do {
+            ArchiveEntry entry;
+            try {
+                entry = archiveInputStream.getNextEntry();
+            } catch (EOFException ex) {
+                break;
+            }
+
+            if (entry == null) break;
+
+            if (entry.getName().compareTo(lastName) < 0) {
+                throw new AssertionError(String.format("Archive is not sorted: entry '%s' comes before '%s'", entry.getName(), lastName));
+            }
+
+            if (entry.getName().endsWith("zip")) {
+                ensureArchiveSorted(archiveInputStream, "zip");
+            }
+
+            lastName = entry.getName();
+
+        } while (true);
     }
 }

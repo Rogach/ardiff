@@ -12,7 +12,7 @@ import java.io.OutputStream;
 import java.util.Objects;
 
 public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
-        implements ArchiveDiffWriter<GenArchiveEntry>, ArchiveDiffReader<GenArchiveEntry>, ArchiveComparator<GenArchiveEntry> {
+        implements ArchiveDiffWriter<GenArchiveEntry>, ArchiveDiffReader<GenArchiveEntry>, ArchiveComparator<GenArchiveEntry>, ArchiveEntrySorter<GenArchiveEntry> {
 
     static final String HEADER = "_ardiff_";
 
@@ -106,6 +106,15 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
     public static ArchiveComparator comparatorForArchiveType(String archiveType) {
         if ("zip".equals(archiveType)) {
             return new ZipArchiveDiff();
+        } else {
+            throw new RuntimeException("Unsupported archive type: " + archiveType);
+        }
+    }
+
+    public static void sortArchiveEntries(InputStream input, OutputStream output) throws IOException, ArchiveDiffException, ArchiveException {
+        String archiveType = detectArchiveType(input);
+        if ("zip".equals(archiveType)) {
+            new ZipArchiveDiff().sortArchiveEntriesImpl(input, output);
         } else {
             throw new RuntimeException("Unsupported archive type: " + archiveType);
         }

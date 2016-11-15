@@ -180,5 +180,13 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
         entry.setSize(diffStream.readInt());
     }
 
+    @Override
+    public void setEntryForData(ZipArchiveEntry entry, byte[] data) {
+        CRC32 checksum = new CRC32();
+        checksum.update(data);
+
+        entry.setCrc(checksum.getValue());
+        entry.setSize(data.length);
+    }
 }
 
