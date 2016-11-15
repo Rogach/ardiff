@@ -2,7 +2,6 @@ package org.rogach.ardiff;
 
 import com.nothome.delta.GDiffPatcher;
 import org.apache.commons.compress.archivers.*;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;

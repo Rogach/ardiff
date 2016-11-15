@@ -151,7 +151,6 @@ public class DiffTests {
                 new ByteArrayInputStream(before),
                 new ByteArrayInputStream(after),
                 "zip",
-                false,
                 diffOutputStream
         );
         diffOutputStream.close();

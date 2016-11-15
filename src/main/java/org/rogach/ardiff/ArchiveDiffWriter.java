@@ -9,17 +9,17 @@ import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
 import java.io.*;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedOutputStream;
 
 public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
         extends ArchiveDiffBase<GenArchiveEntry> {
 
-    default void computeDiff(
+    default void computeDiffImpl(
             InputStream before,
             InputStream after,
-            boolean assumeOrdering,
             OutputStream diff
     ) throws ArchiveException, ArchiveDiffException, IOException {
         ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
@@ -29,40 +29,48 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
         DataOutputStream diffStream = new DataOutputStream(checkedDiffStream);
         diffStream.write(ArchiveDiff.HEADER.getBytes("ASCII"));
 
-        if (!assumeOrdering) {
-            HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> entriesBefore = readAllEntries(archiveStreamBefore);
-            HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> entriesAfter = readAllEntries(archiveStreamAfter);
+        List<ArchiveEntryWithData<GenArchiveEntry>> entriesBefore = listAllEntries(archiveStreamBefore);
+        List<ArchiveEntryWithData<GenArchiveEntry>> entriesAfter = listAllEntries(archiveStreamAfter);
 
+        Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorBefore = entriesBefore.iterator();
+        Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorAfter = entriesAfter.iterator();
 
-            for (String path : entriesBefore.keySet()) {
-                ArchiveEntryWithData<GenArchiveEntry> entryBefore = entriesBefore.get(path);
-                ArchiveEntryWithData<GenArchiveEntry> entryAfter = entriesAfter.get(path);
+        ArchiveEntryWithData<GenArchiveEntry> entryBefore = iteratorBefore.hasNext() ? iteratorBefore.next() : null;
+        ArchiveEntryWithData<GenArchiveEntry> entryAfter = iteratorAfter.hasNext() ? iteratorAfter.next() : null;
 
+        while (entryBefore != null || entryAfter != null) {
+            if (entryBefore == null) {
                 checkedDiffStream.getChecksum().reset();
-
-                if (entryAfter == null) {
-                    writeEntryRemoved(entryBefore.entry, diffStream);
-                } else {
-                    boolean entryWritten = writeEntryDiff(entryBefore, entryAfter, false, diffStream);
-                    if (!entryWritten) continue;
-                }
-
+                writeEntryAdded(entryAfter, diffStream);
                 diffStream.writeLong(checkedDiffStream.getChecksum().getValue());
-            }
-
-            for (String path : entriesAfter.keySet()) {
-                if (!entriesBefore.containsKey(path)) {
-                    ArchiveEntryWithData<GenArchiveEntry> entryAfter = entriesAfter.get(path);
-
+                entryAfter = iteratorAfter.hasNext() ? iteratorAfter.next() : null;
+            } else if (entryAfter == null) {
+                checkedDiffStream.getChecksum().reset();
+                writeEntryRemoved(entryBefore.entry, diffStream);
+                diffStream.writeLong(checkedDiffStream.getChecksum().getValue());
+                entryBefore = iteratorBefore.hasNext() ? iteratorBefore.next() : null;
+            } else {
+                int entryOrder = entryBefore.entry.getName().compareTo(entryAfter.entry.getName());
+                if (entryOrder < 0) {
                     checkedDiffStream.getChecksum().reset();
-
-                    writeEntryAdded(entryAfter, diffStream);
-
+                    writeEntryRemoved(entryBefore.entry, diffStream);
                     diffStream.writeLong(checkedDiffStream.getChecksum().getValue());
+                    entryBefore = iteratorBefore.hasNext() ? iteratorBefore.next() : null;
+                } else if (entryOrder > 0) {
+                    checkedDiffStream.getChecksum().reset();
+                    writeEntryAdded(entryAfter, diffStream);
+                    diffStream.writeLong(checkedDiffStream.getChecksum().getValue());
+                    entryAfter = iteratorAfter.hasNext() ? iteratorAfter.next() : null;
+                } else {
+                    checkedDiffStream.getChecksum().reset();
+                    boolean entryWritten = writeEntryDiff(entryBefore, entryAfter, diffStream);
+                    if (entryWritten) {
+                        diffStream.writeLong(checkedDiffStream.getChecksum().getValue());
+                    }
+                    entryBefore = iteratorBefore.hasNext() ? iteratorBefore.next() : null;
+                    entryAfter = iteratorAfter.hasNext() ? iteratorAfter.next() : null;
                 }
             }
-        } else {
-            throw new UnsupportedOperationException("Diff for sorted archives is not yet implemented");
         }
 
         diffStream.writeByte(0);
@@ -93,7 +101,6 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
     default boolean writeEntryDiff(
             ArchiveEntryWithData<GenArchiveEntry> entryBefore,
             ArchiveEntryWithData<GenArchiveEntry> entryAfter,
-            boolean assumeOrdering,
             DataOutputStream diffStream
     ) throws IOException, ArchiveDiffException, ArchiveException {
 
@@ -120,8 +127,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                 ArchiveDiff.computeDiff(
                         new ByteArrayInputStream(entryBefore.data),
                         new ByteArrayInputStream(entryAfter.data),
-                        diffByteArrayOutputStream,
-                        assumeOrdering
+                        diffByteArrayOutputStream
                 );
                 diffByteArrayOutputStream.close();
 
@@ -132,7 +138,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                         new ByteArrayInputStream(entryBefore.data),
                         new ByteArrayInputStream(nestedArchiveDiff),
                         recompressByteArrayOutputStream,
-                        assumeOrdering
+                        false
                 );
                 recompressByteArrayOutputStream.close();
 

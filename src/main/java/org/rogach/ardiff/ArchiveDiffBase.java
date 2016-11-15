@@ -5,7 +5,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.*;
 
 public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
 
@@ -19,6 +19,20 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
         return (GenArchiveEntry) archiveInputStream.getNextEntry();
     }
 
+    default List<ArchiveEntryWithData<GenArchiveEntry>> listAllEntries(ArchiveInputStream archiveInputStream) throws IOException {
+
+        List<ArchiveEntryWithData<GenArchiveEntry>> entries = new ArrayList<>();
+        GenArchiveEntry entry = getNextEntry(archiveInputStream);
+        while (entry != null) {
+            entries.add(new ArchiveEntryWithData<>(entry, IOUtils.toByteArray(archiveInputStream)));
+            entry = getNextEntry(archiveInputStream);
+        }
+
+        Collections.sort(entries, archiveEntryComparator());
+
+        return entries;
+    }
+
     default HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> readAllEntries(ArchiveInputStream archiveInputStream) throws IOException {
         HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> entries = new HashMap<>();
         GenArchiveEntry entry = getNextEntry(archiveInputStream);
@@ -27,6 +41,10 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
             entry = getNextEntry(archiveInputStream);
         }
         return entries;
+    }
+
+    default Comparator<ArchiveEntryWithData<GenArchiveEntry>> archiveEntryComparator() {
+        return (o1, o2) -> o1.entry.getName().compareTo(o2.entry.getName());
     }
 
 }

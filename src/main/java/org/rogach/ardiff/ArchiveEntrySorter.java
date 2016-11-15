@@ -5,8 +5,6 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extends ArchiveDiffBase<GenArchiveEntry> {
@@ -14,14 +12,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
     default void sortArchiveEntriesImpl(InputStream input, OutputStream output) throws IOException, ArchiveException, ArchiveDiffException {
         ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), input);
 
-        List<ArchiveEntryWithData<GenArchiveEntry>> entries = new ArrayList<>();
-        GenArchiveEntry entry = getNextEntry(archiveInputStream);
-        while (entry != null) {
-            entries.add(new ArchiveEntryWithData<>(entry, IOUtils.toByteArray(archiveInputStream)));
-            entry = getNextEntry(archiveInputStream);
-        }
-
-        Collections.sort(entries, (a, b) -> a.entry.getName().compareTo(b.entry.getName()));
+        List<ArchiveEntryWithData<GenArchiveEntry>> entries = listAllEntries(archiveInputStream);
 
         ArchiveOutputStream archiveOutputStream = new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), output);
 

@@ -28,15 +28,6 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             InputStream after,
             OutputStream diff
     ) throws ArchiveDiffException, ArchiveException, IOException {
-        computeDiff(before, after, diff, false);
-    }
-
-    public static void computeDiff(
-            InputStream before,
-            InputStream after,
-            OutputStream diff,
-            boolean assumeOrdering
-    ) throws ArchiveDiffException, ArchiveException, IOException {
         String beforeArchiveType = detectArchiveType(before);
         String afterArchiveType = detectArchiveType(after);
 
@@ -44,18 +35,17 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             throw new ArchiveDiffException(String.format("Unable to compute diff for different archive types: before=%s, after=%s", beforeArchiveType, afterArchiveType));
         }
 
-        computeDiff(before, after, beforeArchiveType, assumeOrdering, diff);
+        computeDiff(before, after, beforeArchiveType, diff);
     }
 
     public static void computeDiff(
             InputStream before,
             InputStream after,
             String archiveType,
-            boolean assumeOrdering,
             OutputStream diff
     ) throws ArchiveException, ArchiveDiffException, IOException {
         if ("zip".equals(archiveType)) {
-            new ZipArchiveDiff().computeDiff(before, after, assumeOrdering, diff);
+            new ZipArchiveDiff().computeDiffImpl(before, after, diff);
         } else {
             throw new RuntimeException("Unsupported archive type: " + archiveType);
         }
