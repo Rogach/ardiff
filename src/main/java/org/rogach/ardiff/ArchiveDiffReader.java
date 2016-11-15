@@ -16,10 +16,9 @@ import java.util.zip.CheckedInputStream;
 public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         extends ArchiveDiffBase<GenArchiveEntry> {
 
-    default void applyDiff(
+    default void applyDiffImpl(
             InputStream before,
             InputStream diff,
-            boolean assumeOrdering,
             OutputStream after
     ) throws ArchiveException, IOException, ArchiveDiffException {
         ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
@@ -35,49 +34,47 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             throw new ArchiveDiffFormatException("Invalid diff stream header");
         }
 
-        if (!assumeOrdering) {
-            HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> entries = readAllEntries(archiveStreamBefore);
+        HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> entries = readAllEntries(archiveStreamBefore);
 
-            do {
-                checkedDiffStream.getChecksum().reset();
+        do {
+            checkedDiffStream.getChecksum().reset();
 
-                byte command = diffStream.readByte();
+            byte command = diffStream.readByte();
 
-                if (command == 0) {
-                    break;
-                }
-
-                String path = readPath(diffStream);
-                ArchiveEntryWithData<GenArchiveEntry> entryBefore = entries.get(path);
-
-                if (command == ArchiveDiff.COMMAND_ADD) {
-                    entries.put(path, readEntryAdd(path, diffStream));
-                } else if (command == ArchiveDiff.COMMAND_REPLACE) {
-                    entries.put(path, readEntryReplace(entryBefore.entry, diffStream));
-                } else if (command == ArchiveDiff.COMMAND_REMOVE) {
-                    entries.remove(path);
-                } else if (command == ArchiveDiff.COMMAND_PATCH) {
-                    entries.put(path, readEntryPatch(entryBefore, diffStream));
-                } else if (command == ArchiveDiff.COMMAND_ARCHIVE_PATCH) {
-                    entries.put(path, readEntryArchivePatch(entryBefore, diffStream));
-                } else if (command == ArchiveDiff.COMMAND_UPDATE_ATTRIBUTES) {
-                    entries.put(path, readEntryUpdateAttributes(entryBefore, diffStream));
-                }
-
-                long checksum = checkedDiffStream.getChecksum().getValue();
-                long expectedChecksum = diffStream.readLong();
-                if (checksum != expectedChecksum) {
-                    throw new ArchiveDiffCorruptedException("Checksum mismatch at offset " + diffStream.read());
-                }
-            } while (true);
-
-            for (ArchiveEntryWithData<GenArchiveEntry> entry : entries.values()) {
-                archiveStreamAfter.putArchiveEntry(entry.entry);
-                IOUtils.copy(new ByteArrayInputStream(entry.data), archiveStreamAfter);
-                archiveStreamAfter.closeArchiveEntry();
+            if (command == 0) {
+                break;
             }
-        } else {
-            throw new UnsupportedOperationException("Diff for sorted archives is not yet implemented");
+
+            String path = readPath(diffStream);
+            ArchiveEntryWithData<GenArchiveEntry> entryBefore = entries.get(path);
+
+            if (command == ArchiveDiff.COMMAND_ADD) {
+                entries.put(path, readEntryAdd(path, diffStream));
+            } else if (command == ArchiveDiff.COMMAND_REPLACE) {
+                entries.put(path, readEntryReplace(entryBefore.entry, diffStream));
+            } else if (command == ArchiveDiff.COMMAND_REMOVE) {
+                entries.remove(path);
+            } else if (command == ArchiveDiff.COMMAND_PATCH) {
+                entries.put(path, readEntryPatch(entryBefore, diffStream));
+            } else if (command == ArchiveDiff.COMMAND_ARCHIVE_PATCH) {
+                entries.put(path, readEntryArchivePatch(entryBefore, diffStream));
+            } else if (command == ArchiveDiff.COMMAND_UPDATE_ATTRIBUTES) {
+                entries.put(path, readEntryUpdateAttributes(entryBefore, diffStream));
+            } else {
+                throw new ArchiveDiffException("Unexpected command: " + command);
+            }
+
+            long checksum = checkedDiffStream.getChecksum().getValue();
+            long expectedChecksum = diffStream.readLong();
+            if (checksum != expectedChecksum) {
+                throw new ArchiveDiffCorruptedException("Checksum mismatch at offset " + diffStream.read());
+            }
+        } while (true);
+
+        for (ArchiveEntryWithData<GenArchiveEntry> entry : entries.values()) {
+            archiveStreamAfter.putArchiveEntry(entry.entry);
+            IOUtils.copy(new ByteArrayInputStream(entry.data), archiveStreamAfter);
+            archiveStreamAfter.closeArchiveEntry();
         }
 
         archiveStreamAfter.finish();
@@ -137,6 +134,8 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         readAttributes(entryAfter, diffStream);
 
         readEntrySizeAndChecksum(entryAfter, diffStream);
+
+        diffStream.readInt();
 
         ByteArrayOutputStream after = new ByteArrayOutputStream();
         ArchiveDiff.applyDiff(

@@ -28,6 +28,15 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             InputStream after,
             OutputStream diff
     ) throws ArchiveDiffException, ArchiveException, IOException {
+        computeDiff(before, after, false, diff);
+    }
+
+    public static void computeDiff(
+            InputStream before,
+            InputStream after,
+            boolean assumeOrdering,
+            OutputStream diff
+    ) throws ArchiveDiffException, ArchiveException, IOException {
         String beforeArchiveType = detectArchiveType(before);
         String afterArchiveType = detectArchiveType(after);
 
@@ -35,20 +44,17 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             throw new ArchiveDiffException(String.format("Unable to compute diff for different archive types: before=%s, after=%s", beforeArchiveType, afterArchiveType));
         }
 
-        computeDiff(before, after, beforeArchiveType, diff);
+        computeDiff(before, after, beforeArchiveType, assumeOrdering, diff);
     }
 
     public static void computeDiff(
             InputStream before,
             InputStream after,
             String archiveType,
+            boolean assumeOrdering,
             OutputStream diff
     ) throws ArchiveException, ArchiveDiffException, IOException {
-        if ("zip".equals(archiveType)) {
-            new ZipArchiveDiff().computeDiffImpl(before, after, diff);
-        } else {
-            throw new RuntimeException("Unsupported archive type: " + archiveType);
-        }
+        getInstance(archiveType).computeDiffImpl(before, after, assumeOrdering, diff);
     }
 
     public static void applyDiff(
@@ -69,6 +75,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
         applyDiff(before, diff, archiveType, assumeOrdering, after);
     }
 
+    @SuppressWarnings("unchecked")
     public static void applyDiff(
             InputStream before,
             InputStream diff,
@@ -76,10 +83,10 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             boolean assumeOrdering,
             OutputStream after
     ) throws ArchiveException, IOException, ArchiveDiffException {
-        if ("zip".equals(archiveType)) {
-            new ZipArchiveDiff().applyDiff(before, diff, assumeOrdering, after);
+        if (assumeOrdering) {
+            new StreamingArchiveDiffReader(before, diff, after, getInstance(archiveType)).streamingApplyDiff();
         } else {
-            throw new RuntimeException("Unsupported archive type: " + archiveType);
+            getInstance(archiveType).applyDiffImpl(before, diff, after);
         }
     }
 
@@ -93,7 +100,8 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
         return comparatorForArchiveType(beforeArchiveType).archivesEqual(before, after);
     }
 
-    public static ArchiveComparator comparatorForArchiveType(String archiveType) {
+    @SuppressWarnings("unchecked")
+    public static ArchiveDiff getInstance(String archiveType) {
         if ("zip".equals(archiveType)) {
             return new ZipArchiveDiff();
         } else {
@@ -101,13 +109,13 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
         }
     }
 
+    public static ArchiveComparator comparatorForArchiveType(String archiveType) {
+        return getInstance(archiveType);
+    }
+
     public static void sortArchiveEntries(InputStream input, OutputStream output) throws IOException, ArchiveDiffException, ArchiveException {
         String archiveType = detectArchiveType(input);
-        if ("zip".equals(archiveType)) {
-            new ZipArchiveDiff().sortArchiveEntriesImpl(input, output);
-        } else {
-            throw new RuntimeException("Unsupported archive type: " + archiveType);
-        }
+        getInstance(archiveType).sortArchiveEntriesImpl(input, output);
     }
 
     public static String detectArchiveType(InputStream in) throws ArchiveDiffException, IOException {
@@ -122,6 +130,15 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             throw new ArchiveDiffException("Unable to detect archive type - no supported archive type found for signature");
         } catch (IOException ex) {
             throw new ArchiveDiffException("Could not use reset and mark operations on input stream", ex);
+        }
+    }
+
+    public static String archiveTypeFromName(String name) {
+        name = name.toLowerCase();
+        if (name.endsWith("zip") || name.endsWith("jar")) {
+            return "zip";
+        } else {
+            throw new RuntimeException("Unable to determine archive type from name: " + name);
         }
     }
 

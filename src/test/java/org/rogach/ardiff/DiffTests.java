@@ -58,10 +58,19 @@ public class DiffTests {
         byte[] before = IOUtils.toByteArray(getClass().getResourceAsStream(resourceBefore));
         byte[] after = IOUtils.toByteArray(getClass().getResourceAsStream(resourceAfter));
 
+        ByteArrayOutputStream sortedOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.sortArchiveEntries(
+                new ByteArrayInputStream(before),
+                sortedOutputStream
+        );
+        sortedOutputStream.close();
+        byte[] sortedBefore = sortedOutputStream.toByteArray();
+
         ByteArrayOutputStream diffOutputStream = new ByteArrayOutputStream();
         ArchiveDiff.computeDiff(
                 new ByteArrayInputStream(before),
                 new ByteArrayInputStream(after),
+                assumeOrdering,
                 diffOutputStream
         );
         diffOutputStream.close();
@@ -70,9 +79,10 @@ public class DiffTests {
 
         ByteArrayOutputStream resultOutputStream = new ByteArrayOutputStream();
         ArchiveDiff.applyDiff(
-                new ByteArrayInputStream(before),
+                new ByteArrayInputStream(assumeOrdering ? sortedBefore : before),
                 new ByteArrayInputStream(diff),
-                resultOutputStream
+                resultOutputStream,
+                assumeOrdering
         );
         resultOutputStream.close();
 
@@ -108,6 +118,7 @@ public class DiffTests {
         for (String archiveBefore : archiveNames) {
             for (String archiveAfter : archiveNames) {
                 testDiffApplyInvariant("/zip-simple/" + archiveBefore, "/zip-simple/" + archiveAfter, false);
+                testDiffApplyInvariant("/zip-simple/" + archiveBefore, "/zip-simple/" + archiveAfter, true);
             }
         }
     }
@@ -137,12 +148,13 @@ public class DiffTests {
         for (String archiveBefore : archiveNames) {
             for (String archiveAfter : archiveNames) {
                 testDiffApplyInvariant("/zip-recursive/" + archiveBefore, "/zip-recursive/" + archiveAfter, false);
+                testDiffApplyInvariant("/zip-recursive/" + archiveBefore, "/zip-recursive/" + archiveAfter, true);
             }
         }
     }
 
     @Test(expected = ArchiveDiffCorruptedException.class)
-    public void testDiffCorruption() throws Exception {
+    public void testDiffChecksumValidation() throws Exception {
         byte[] before = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a1_b1_c1.zip"));
         byte[] after = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a2_b2_c2.zip"));
 
@@ -151,6 +163,7 @@ public class DiffTests {
                 new ByteArrayInputStream(before),
                 new ByteArrayInputStream(after),
                 "zip",
+                false,
                 diffOutputStream
         );
         diffOutputStream.close();
@@ -166,6 +179,37 @@ public class DiffTests {
                 new ByteArrayInputStream(diff),
                 "zip",
                 false,
+                resultOutputStream
+        );
+        resultOutputStream.close();
+    }
+
+    @Test(expected = ArchiveDiffCorruptedException.class)
+    public void testStreamingDiffChecksumValidation() throws Exception {
+        byte[] before = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a1_b1_c1.zip"));
+        byte[] after = IOUtils.toByteArray(getClass().getResourceAsStream("/zip-simple/a2_b2_c2.zip"));
+
+        ByteArrayOutputStream diffOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.computeDiff(
+                new ByteArrayInputStream(before),
+                new ByteArrayInputStream(after),
+                "zip",
+                true,
+                diffOutputStream
+        );
+        diffOutputStream.close();
+
+        byte[] diff = diffOutputStream.toByteArray();
+
+        // corrupt the byte
+        diff[42] = 0;
+
+        ByteArrayOutputStream resultOutputStream = new ByteArrayOutputStream();
+        ArchiveDiff.applyDiff(
+                new ByteArrayInputStream(before),
+                new ByteArrayInputStream(diff),
+                "zip",
+                true,
                 resultOutputStream
         );
         resultOutputStream.close();
@@ -229,4 +273,5 @@ public class DiffTests {
 
         } while (true);
     }
+
 }

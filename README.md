@@ -24,7 +24,7 @@ so I invented something that vaguely resembles BNF with C extensions.
   <path>
   <attributes> # omitted for remove command
   resultChecksumAndLength # variable (per format), omitted for remove, update attributes
-  dataLength: int32 # omitted for remove, update attributes and archive patch commands
+  dataLength: int32 # omitted for remove and update attributes commands
   data: int8[dataLength] # omitted for remove and update attributes commands
   checksum: int64 # crc32
 

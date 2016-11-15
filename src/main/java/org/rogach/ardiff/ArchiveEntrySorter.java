@@ -42,6 +42,8 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
 
             }
         }
+
+        archiveOutputStream.finish();
     }
 
     void setEntryForData(GenArchiveEntry entry, byte[] data);

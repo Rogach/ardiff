@@ -2,6 +2,8 @@ name := """ardiff"""
 
 autoScalaLibrary := false
 
+javacOptions ++= Seq("-Xlint:unchecked")
+
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-compress" % "1.12",
   "com.nothome" % "javaxdelta" % "2.0.1",

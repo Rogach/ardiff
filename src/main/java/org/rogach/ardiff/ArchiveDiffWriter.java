@@ -20,6 +20,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
     default void computeDiffImpl(
             InputStream before,
             InputStream after,
+            boolean assumeOrdering,
             OutputStream diff
     ) throws ArchiveException, ArchiveDiffException, IOException {
         ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
@@ -63,7 +64,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                     entryAfter = iteratorAfter.hasNext() ? iteratorAfter.next() : null;
                 } else {
                     checkedDiffStream.getChecksum().reset();
-                    boolean entryWritten = writeEntryDiff(entryBefore, entryAfter, diffStream);
+                    boolean entryWritten = writeEntryDiff(entryBefore, entryAfter, diffStream, assumeOrdering);
                     if (entryWritten) {
                         diffStream.writeLong(checkedDiffStream.getChecksum().getValue());
                     }
@@ -101,7 +102,8 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
     default boolean writeEntryDiff(
             ArchiveEntryWithData<GenArchiveEntry> entryBefore,
             ArchiveEntryWithData<GenArchiveEntry> entryAfter,
-            DataOutputStream diffStream
+            DataOutputStream diffStream,
+            boolean assumeOrdering
     ) throws IOException, ArchiveDiffException, ArchiveException {
 
         boolean attributesDifferent = !attributesEqual(entryBefore.entry, entryAfter.entry);
@@ -123,9 +125,21 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
                 writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
 
+                byte[] beforeData = entryBefore.data;
+
+                if (assumeOrdering) {
+                    ByteArrayOutputStream sortedBeforeOutputStream = new ByteArrayOutputStream();
+                    ArchiveDiff.sortArchiveEntries(
+                            new ByteArrayInputStream(entryBefore.data),
+                            sortedBeforeOutputStream
+                    );
+                    sortedBeforeOutputStream.close();
+                    beforeData = sortedBeforeOutputStream.toByteArray();
+                }
+
                 ByteArrayOutputStream diffByteArrayOutputStream = new ByteArrayOutputStream();
                 ArchiveDiff.computeDiff(
-                        new ByteArrayInputStream(entryBefore.data),
+                        new ByteArrayInputStream(beforeData),
                         new ByteArrayInputStream(entryAfter.data),
                         diffByteArrayOutputStream
                 );
@@ -135,10 +149,10 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
                 ByteArrayOutputStream recompressByteArrayOutputStream = new ByteArrayOutputStream();
                 ArchiveDiff.applyDiff(
-                        new ByteArrayInputStream(entryBefore.data),
+                        new ByteArrayInputStream(beforeData),
                         new ByteArrayInputStream(nestedArchiveDiff),
                         recompressByteArrayOutputStream,
-                        false
+                        assumeOrdering
                 );
                 recompressByteArrayOutputStream.close();
 
@@ -146,6 +160,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
                 writeEntrySizeAndChecksum(recompress, diffStream);
 
+                diffStream.writeInt(nestedArchiveDiff.length);
                 diffStream.write(nestedArchiveDiff);
 
             } else {
