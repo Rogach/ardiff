@@ -213,7 +213,7 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
         ArchiveDiff.applyDiff(
                 archiveStreamBefore,
                 new BoundedInputStream(diffStream, patchLength),
-                "zip",
+                ArchiveDiff.archiveTypeFromName(commandPath),
                 true,
                 archiveStreamAfter
         );
