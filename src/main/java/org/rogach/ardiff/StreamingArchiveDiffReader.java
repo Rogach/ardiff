@@ -1,7 +1,10 @@
 package org.rogach.ardiff;
 
 import com.nothome.delta.GDiffPatcher;
-import org.apache.commons.compress.archivers.*;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.utils.BoundedInputStream;
 import org.apache.commons.compress.utils.CountingInputStream;
 import org.apache.commons.compress.utils.IOUtils;
@@ -103,7 +106,7 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
             }
         }
 
-        archiveStreamAfter.finish();
+        utils.finishArchiveOutputStream(archiveStreamAfter);
     }
 
     private void readNextEntry() throws IOException {

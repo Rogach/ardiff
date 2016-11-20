@@ -1,6 +1,5 @@
 package org.rogach.ardiff.formats;
 
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry;
 import org.rogach.ardiff.ArchiveDiff;
 

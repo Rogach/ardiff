@@ -17,6 +17,10 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
         return new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), output);
     }
 
+    default void finishArchiveOutputStream(ArchiveOutputStream output) throws IOException {
+        output.finish();
+    }
+
     default ArchiveInputStream createArchiveInputStream(InputStream input) throws IOException, ArchiveDiffException, ArchiveException {
         return new ArchiveStreamFactory().createArchiveInputStream(archiverName(), input);
     }

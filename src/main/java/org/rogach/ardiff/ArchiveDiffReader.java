@@ -1,7 +1,10 @@
 package org.rogach.ardiff;
 
 import com.nothome.delta.GDiffPatcher;
-import org.apache.commons.compress.archivers.*;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.utils.CountingInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
@@ -79,7 +82,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             archiveStreamAfter.closeArchiveEntry();
         }
 
-        archiveStreamAfter.finish();
+        finishArchiveOutputStream(archiveStreamAfter);
     }
 
     GenArchiveEntry createNewArchiveEntry(String path, int length);

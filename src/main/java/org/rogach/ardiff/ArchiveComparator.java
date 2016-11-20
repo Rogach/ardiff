@@ -3,7 +3,6 @@ package org.rogach.ardiff;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
 import java.io.ByteArrayInputStream;

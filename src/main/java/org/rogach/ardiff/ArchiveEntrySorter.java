@@ -1,6 +1,9 @@
 package org.rogach.ardiff;
 
-import org.apache.commons.compress.archivers.*;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
@@ -41,7 +44,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
             }
         }
 
-        archiveOutputStream.finish();
+        finishArchiveOutputStream(archiveOutputStream);
     }
 
     GenArchiveEntry getEntryForData(GenArchiveEntry entry, byte[] data);

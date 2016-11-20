@@ -7,8 +7,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.rogach.ardiff.ArchiveDiff;
@@ -42,13 +40,16 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
         return "tar";
     }
 
+    private GZIPOutputStream gzipOutputStream;
+
     @Override
     public ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws IOException, ArchiveDiffException, ArchiveException {
         OutputStream compressedOutputStream;
         if ("".equals(compressionType)) {
             compressedOutputStream = output;
         } else if ("gz".equals(compressionType)) {
-            compressedOutputStream = new GZIPOutputStream(output);
+            gzipOutputStream = new GZIPOutputStream(output);
+            compressedOutputStream = gzipOutputStream;
         } else if ("xz".equals(compressionType)) {
             compressedOutputStream = new XZCompressorOutputStream(output);
         } else {
@@ -57,6 +58,12 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
         TarArchiveOutputStream outputStream = new TarArchiveOutputStream(compressedOutputStream);
         outputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
         return outputStream;
+    }
+
+    @Override
+    public void finishArchiveOutputStream(ArchiveOutputStream output) throws IOException {
+        output.finish();
+        gzipOutputStream.finish();
     }
 
     @Override
