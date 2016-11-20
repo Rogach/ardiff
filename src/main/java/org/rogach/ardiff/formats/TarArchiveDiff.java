@@ -63,7 +63,9 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
     @Override
     public void finishArchiveOutputStream(ArchiveOutputStream output) throws IOException {
         output.finish();
-        gzipOutputStream.finish();
+        if ("gz".equals(compressionType)) {
+            gzipOutputStream.finish();
+        }
     }
 
     @Override
