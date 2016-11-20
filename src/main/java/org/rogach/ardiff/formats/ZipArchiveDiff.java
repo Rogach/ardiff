@@ -1,7 +1,8 @@
-package org.rogach.ardiff;
+package org.rogach.ardiff.formats;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.rogach.ardiff.ArchiveDiff;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,7 +11,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.zip.CRC32;
 
-class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
+public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
 
     static final byte ATTR_EXTRA = 1;
     static final byte ATTR_COMMENT = 2;

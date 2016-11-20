@@ -1,8 +1,9 @@
-package org.rogach.ardiff;
+package org.rogach.ardiff.formats;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.rogach.ardiff.ArchiveDiff;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

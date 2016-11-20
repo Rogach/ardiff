@@ -2,13 +2,15 @@ package org.rogach.ardiff;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
+import org.rogach.ardiff.formats.ArArchiveDiff;
+import org.rogach.ardiff.formats.TarArchiveDiff;
+import org.rogach.ardiff.formats.ZipArchiveDiff;
 
 import java.io.IOException;
 import java.io.InputStream;
