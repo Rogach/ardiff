@@ -38,14 +38,14 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             InputStream after,
             OutputStream diff
     ) throws ArchiveDiffException, ArchiveException, IOException {
-        computeDiff(before, after, false, diff);
+        computeDiff(before, after, diff, false);
     }
 
     public static void computeDiff(
             InputStream before,
             InputStream after,
-            boolean assumeOrdering,
-            OutputStream diff
+            OutputStream diff,
+            boolean assumeOrdering
     ) throws ArchiveDiffException, ArchiveException, IOException {
         String beforeArchiveType = detectArchiveType(before);
         String afterArchiveType = detectArchiveType(after);

@@ -75,8 +75,8 @@ public class DiffTests {
         ArchiveDiff.computeDiff(
                 new ByteArrayInputStream(before),
                 new ByteArrayInputStream(after),
-                assumeOrdering,
-                diffOutputStream
+                diffOutputStream,
+                assumeOrdering
         );
         diffOutputStream.close();
 
