@@ -33,7 +33,7 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
         return (GenArchiveEntry) archiveInputStream.getNextEntry();
     }
 
-    default List<ArchiveEntryWithData<GenArchiveEntry>> listAllEntries(ArchiveInputStream archiveInputStream) throws IOException {
+    default List<ArchiveEntryWithData<GenArchiveEntry>> listAllEntries(ArchiveInputStream archiveInputStream, boolean sort) throws IOException {
 
         List<ArchiveEntryWithData<GenArchiveEntry>> entries = new ArrayList<>();
         GenArchiveEntry entry = getNextEntry(archiveInputStream);
@@ -42,7 +42,9 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
             entry = getNextEntry(archiveInputStream);
         }
 
-        Collections.sort(entries, archiveEntryComparator());
+        if (sort) {
+            Collections.sort(entries, archiveEntryComparator());
+        }
 
         return entries;
     }

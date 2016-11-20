@@ -6,6 +6,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
+import org.rogach.ardiff.formats.ArArchiveDiff;
 
 import java.io.*;
 import java.util.List;
@@ -15,7 +16,8 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
     default void sortArchiveEntriesImpl(InputStream input, OutputStream output) throws IOException, ArchiveException, ArchiveDiffException {
         ArchiveInputStream archiveInputStream = createArchiveInputStream(input);
 
-        List<ArchiveEntryWithData<GenArchiveEntry>> entries = listAllEntries(archiveInputStream);
+        // we must not sort AR, because dpkg explicitly specifies archive entry order
+        List<ArchiveEntryWithData<GenArchiveEntry>> entries = listAllEntries(archiveInputStream, !(this instanceof ArArchiveDiff));
 
         ArchiveOutputStream archiveOutputStream = createArchiveOutputStream(output);
 

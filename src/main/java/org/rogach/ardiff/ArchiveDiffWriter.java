@@ -4,8 +4,8 @@ import com.nothome.delta.Delta;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
+import org.rogach.ardiff.formats.ArArchiveDiff;
 
 import java.io.*;
 import java.util.Arrays;
@@ -31,8 +31,8 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
         DataOutputStream diffStream = new DataOutputStream(checkedDiffStream);
         diffStream.write(ArchiveDiff.HEADER.getBytes("ASCII"));
 
-        List<ArchiveEntryWithData<GenArchiveEntry>> entriesBefore = listAllEntries(archiveStreamBefore);
-        List<ArchiveEntryWithData<GenArchiveEntry>> entriesAfter = listAllEntries(archiveStreamAfter);
+        List<ArchiveEntryWithData<GenArchiveEntry>> entriesBefore = listAllEntries(archiveStreamBefore, !(this instanceof ArArchiveDiff));
+        List<ArchiveEntryWithData<GenArchiveEntry>> entriesAfter = listAllEntries(archiveStreamAfter, !(this instanceof ArArchiveDiff));
 
         Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorBefore = entriesBefore.iterator();
         Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorAfter = entriesAfter.iterator();
