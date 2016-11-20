@@ -1,20 +1,31 @@
 package org.rogach.ardiff.formats;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.rogach.ardiff.ArchiveDiff;
+import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Objects;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
+
+    private String compressionType;
+
+    public TarArchiveDiff(String compressionType) {
+        this.compressionType = compressionType;
+    }
 
     static final byte ATTR_MODE = 1;
     static final byte ATTR_USER_ID = 2;
@@ -28,14 +39,39 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
 
     @Override
     public String archiverName() {
-        return ArchiveStreamFactory.TAR;
+        return "tar";
     }
 
     @Override
-    public ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws ArchiveException {
-        TarArchiveOutputStream outputStream = new TarArchiveOutputStream(output);
+    public ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws IOException, ArchiveDiffException, ArchiveException {
+        OutputStream compressedOutputStream;
+        if ("".equals(compressionType)) {
+            compressedOutputStream = output;
+        } else if ("gz".equals(compressionType)) {
+            compressedOutputStream = new GZIPOutputStream(output);
+        } else if ("xz".equals(compressionType)) {
+            compressedOutputStream = new XZCompressorOutputStream(output);
+        } else {
+            throw new ArchiveDiffException("Unexpected tar compression type: " + compressionType);
+        }
+        TarArchiveOutputStream outputStream = new TarArchiveOutputStream(compressedOutputStream);
         outputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
         return outputStream;
+    }
+
+    @Override
+    public ArchiveInputStream createArchiveInputStream(InputStream input) throws IOException, ArchiveDiffException, ArchiveException {
+        InputStream decompressedInputStream;
+        if ("".equals(compressionType)) {
+            decompressedInputStream = input;
+        } else if ("gz".equals(compressionType)) {
+            decompressedInputStream = new GZIPInputStream(input);
+        } else if ("xz".equals(compressionType)) {
+            decompressedInputStream = new XZCompressorInputStream(input);
+        } else {
+            throw new ArchiveDiffException("Unexpected tar compression type: " + compressionType);
+        }
+        return new TarArchiveInputStream(decompressedInputStream);
     }
 
     @Override

@@ -24,8 +24,9 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
             boolean assumeOrdering,
             OutputStream diff
     ) throws ArchiveException, ArchiveDiffException, IOException {
-        ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
-        ArchiveInputStream archiveStreamAfter = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), after);
+        System.out.printf("computeDiffImpl\n");
+        ArchiveInputStream archiveStreamBefore = createArchiveInputStream(before);
+        ArchiveInputStream archiveStreamAfter = createArchiveInputStream(after);
 
         CheckedOutputStream checkedDiffStream = new CheckedOutputStream(diff, new CRC32());
         DataOutputStream diffStream = new DataOutputStream(checkedDiffStream);

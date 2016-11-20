@@ -55,8 +55,13 @@ public class DiffTests {
     }
 
     void testDiffApplyInvariant(String resourceBefore, String resourceAfter, boolean assumeOrdering) throws Exception {
-        byte[] before = IOUtils.toByteArray(getClass().getResourceAsStream(resourceBefore));
-        byte[] after = IOUtils.toByteArray(getClass().getResourceAsStream(resourceAfter));
+        InputStream beforeStream = getClass().getResourceAsStream(resourceBefore);
+        byte[] before = IOUtils.toByteArray(beforeStream);
+        beforeStream.close();
+
+        InputStream afterStream = getClass().getResourceAsStream(resourceAfter);
+        byte[] after = IOUtils.toByteArray(afterStream);
+        afterStream.close();
 
         ByteArrayOutputStream sortedOutputStream = new ByteArrayOutputStream();
         ArchiveDiff.sortArchiveEntries(

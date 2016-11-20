@@ -17,7 +17,7 @@ public class ArArchiveDiff extends ArchiveDiff<ArArchiveEntry> {
 
     @Override
     public String archiverName() {
-        return ArchiveStreamFactory.AR;
+        return "ar";
     }
 
 

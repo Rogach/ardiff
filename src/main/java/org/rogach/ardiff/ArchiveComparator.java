@@ -15,8 +15,8 @@ import java.util.HashMap;
 public interface ArchiveComparator<GenArchiveEntry extends ArchiveEntry> extends ArchiveDiffBase<GenArchiveEntry> {
 
     default boolean archivesEqual(InputStream streamBefore, InputStream streamAfter) throws IOException, ArchiveException, ArchiveDiffException {
-        ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamBefore);
-        ArchiveInputStream archiveStreamAfter = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), streamAfter);
+        ArchiveInputStream archiveStreamBefore = createArchiveInputStream(streamBefore);
+        ArchiveInputStream archiveStreamAfter = createArchiveInputStream(streamAfter);
 
         HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> entriesBefore = readAllEntries(archiveStreamBefore);
         HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> entriesAfter = readAllEntries(archiveStreamAfter);

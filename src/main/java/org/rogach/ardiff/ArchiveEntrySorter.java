@@ -10,7 +10,7 @@ import java.util.List;
 public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extends ArchiveDiffBase<GenArchiveEntry> {
 
     default void sortArchiveEntriesImpl(InputStream input, OutputStream output) throws IOException, ArchiveException, ArchiveDiffException {
-        ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), input);
+        ArchiveInputStream archiveInputStream = createArchiveInputStream(input);
 
         List<ArchiveEntryWithData<GenArchiveEntry>> entries = listAllEntries(archiveInputStream);
 

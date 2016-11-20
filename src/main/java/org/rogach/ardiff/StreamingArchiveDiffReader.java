@@ -39,7 +39,7 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
     private String commandPath = null;
 
     void streamingApplyDiff() throws ArchiveException, IOException, ArchiveDiffException {
-        archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(utils.archiverName(), before);
+        archiveStreamBefore = utils.createArchiveInputStream(before);
         checkedDiffStream = new CheckedInputStream(diff, new CRC32());
         countingDiffStream = new CountingInputStream(checkedDiffStream);
         diffStream = new DataInputStream(countingDiffStream);

@@ -22,7 +22,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             InputStream diff,
             OutputStream after
     ) throws ArchiveException, IOException, ArchiveDiffException {
-        ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
+        ArchiveInputStream archiveStreamBefore = createArchiveInputStream(before);
         CheckedInputStream checkedDiffStream = new CheckedInputStream(diff, new CRC32());
         CountingInputStream countingDiffStream = new CountingInputStream(checkedDiffStream);
         DataInputStream diffStream = new DataInputStream(countingDiffStream);

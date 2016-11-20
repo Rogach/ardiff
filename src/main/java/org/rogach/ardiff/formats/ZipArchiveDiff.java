@@ -1,6 +1,5 @@
 package org.rogach.ardiff.formats;
 
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.rogach.ardiff.ArchiveDiff;
 
@@ -22,7 +21,7 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
 
     @Override
     public String archiverName() {
-        return ArchiveStreamFactory.ZIP;
+        return "zip";
     }
 
     @Override

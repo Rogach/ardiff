@@ -6,16 +6,20 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import org.rogach.ardiff.formats.ArArchiveDiff;
 import org.rogach.ardiff.formats.TarArchiveDiff;
 import org.rogach.ardiff.formats.ZipArchiveDiff;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
+import java.util.zip.GZIPInputStream;
 
 public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
         implements ArchiveDiffWriter<GenArchiveEntry>, ArchiveDiffReader<GenArchiveEntry>, ArchiveComparator<GenArchiveEntry>, ArchiveEntrySorter<GenArchiveEntry> {
@@ -108,11 +112,15 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
 
     @SuppressWarnings("unchecked")
     public static ArchiveDiff getInstance(String archiveType) {
-        if (ArchiveStreamFactory.ZIP.equals(archiveType)) {
+        if ("zip".equals(archiveType)) {
             return new ZipArchiveDiff();
-        } else if (ArchiveStreamFactory.TAR.equals(archiveType)) {
-            return new TarArchiveDiff();
-        } else if (ArchiveStreamFactory.AR.equals(archiveType)) {
+        } else if ("tar".equals(archiveType)) {
+            return new TarArchiveDiff("");
+        } else if ("tar.gz".equals(archiveType)) {
+            return new TarArchiveDiff("gz");
+        } else if ("tar.xz".equals(archiveType)) {
+            return new TarArchiveDiff("xz");
+        } else if ("ar".equals(archiveType)) {
             return new ArArchiveDiff();
         } else {
             throw new RuntimeException("Unsupported archive type: " + archiveType);
@@ -135,9 +143,29 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             int signatureLength = IOUtils.readFully(in, signature);
             in.reset();
             if (ZipArchiveInputStream.matches(signature, signatureLength)) {
-                return ArchiveStreamFactory.ZIP;
+                return "zip";
             } else if (ArArchiveInputStream.matches(signature, signatureLength)) {
-                return ArchiveStreamFactory.AR;
+                return "ar";
+            } else if (GzipCompressorInputStream.matches(signature, signatureLength)) {
+                in.mark(256 * 1024); // should be enough to decompress at least a single block
+                InputStream unzippedStream = new BufferedInputStream(new GZIPInputStream(in), 512);
+                String archiveType = detectArchiveType(unzippedStream);
+                in.reset();
+                if ("tar".equals(archiveType)) {
+                    return "tar.gz";
+                } else {
+                    throw new ArchiveDiffException("Unable to detect archive type - no supported archive type found for signature");
+                }
+            } else if (XZCompressorInputStream.matches(signature, signatureLength)) {
+                in.mark(256 * 1024); // should be enough to decompress at least a single block
+                InputStream unzippedStream = new BufferedInputStream(new XZCompressorInputStream(in), 12);
+                String archiveType = detectArchiveType(unzippedStream);
+                in.reset();
+                if ("tar".equals(archiveType)) {
+                    return "tar.xz";
+                } else {
+                    throw new ArchiveDiffException("Unable to detect archive type - no supported archive type found for signature");
+                }
             } else {
 
                 final byte[] tarheader = new byte[512];
@@ -145,7 +173,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
                 signatureLength = IOUtils.readFully(in, tarheader);
                 in.reset();
                 if (TarArchiveInputStream.matches(tarheader, signatureLength)) {
-                    return ArchiveStreamFactory.TAR;
+                    return "tar";
                 }
             }
             throw new ArchiveDiffException("Unable to detect archive type - no supported archive type found for signature");
@@ -160,13 +188,17 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
 
     static String getArchiverType(ArchiveEntry entry) {
         if (entry.getName().endsWith(".zip")) {
-            return ArchiveStreamFactory.ZIP;
+            return "zip";
         } else if (entry.getName().endsWith(".tar")) {
-            return ArchiveStreamFactory.TAR;
+            return "tar";
+        } else if (entry.getName().endsWith(".tar.gz")) {
+            return "tar.gz";
+        } else if (entry.getName().endsWith(".tar.xz")) {
+            return "tar.xz";
         } else if (entry.getName().endsWith(".ar")) {
-            return ArchiveStreamFactory.AR;
+            return "ar";
         } else if (entry.getName().endsWith(".deb")) {
-            return ArchiveStreamFactory.AR;
+            return "ar";
         } else {
             return null;
         }

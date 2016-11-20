@@ -2,8 +2,10 @@ package org.rogach.ardiff;
 
 import org.apache.commons.compress.archivers.*;
 import org.apache.commons.compress.utils.IOUtils;
+import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
@@ -11,8 +13,12 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
 
     String archiverName();
 
-    default ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws ArchiveException {
+    default ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws IOException, ArchiveDiffException, ArchiveException {
         return new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), output);
+    }
+
+    default ArchiveInputStream createArchiveInputStream(InputStream input) throws IOException, ArchiveDiffException, ArchiveException {
+        return new ArchiveStreamFactory().createArchiveInputStream(archiverName(), input);
     }
 
     boolean attributesEqual(GenArchiveEntry entryBefore, GenArchiveEntry entryAfter);
