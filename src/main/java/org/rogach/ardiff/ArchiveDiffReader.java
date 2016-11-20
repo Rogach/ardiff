@@ -45,7 +45,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
                 break;
             }
 
-            String path = readPath(diffStream);
+            String path = readString(diffStream);
             ArchiveEntryWithData<GenArchiveEntry> entryBefore = entries.get(path);
 
             if (command == ArchiveDiff.COMMAND_ADD) {
@@ -160,11 +160,15 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
 
     void readAttributes(GenArchiveEntry entry, DataInputStream diffStream) throws IOException;
 
-    default String readPath(DataInputStream diffStream) throws IOException {
+    default String readString(DataInputStream diffStream) throws IOException {
+        return new String(readBytes(diffStream), "UTF-8");
+    }
+
+    default byte[] readBytes(DataInputStream diffStream) throws IOException {
         short length = diffStream.readShort();
         byte[] bytes = new byte[length];
         diffStream.readFully(bytes);
-        return new String(bytes, "UTF-8");
+        return bytes;
     }
 
 }

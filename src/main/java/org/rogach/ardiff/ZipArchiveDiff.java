@@ -36,72 +36,27 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
 
     @Override
     public void writeAttributes(ZipArchiveEntry entry, DataOutputStream diffStream) throws IOException {
-        if (entry.getExtra() != null) {
-            diffStream.writeByte(ATTR_EXTRA);
-            diffStream.writeShort(entry.getExtra().length);
-            diffStream.write(entry.getExtra());
-        }
-
-        if (entry.getComment() != null) {
-            diffStream.writeByte(ATTR_COMMENT);
-            byte[] commentBytes = entry.getComment().getBytes("UTF-8");
-            diffStream.writeShort(commentBytes.length);
-            diffStream.write(commentBytes);
-        }
-
-        diffStream.writeByte(ATTR_VERSION_MADE_BY);
-        diffStream.writeInt(entry.getVersionMadeBy());
-
-        diffStream.writeByte(ATTR_TIME);
-        diffStream.writeLong(entry.getTime());
-
-        diffStream.writeByte(ATTR_INTERNAL_ATTRIBUTES);
-        diffStream.writeInt(entry.getInternalAttributes());
-
-        diffStream.writeByte(ATTR_EXTERNAL_ATTRIBUTES);
-        diffStream.writeLong(entry.getExternalAttributes());
-
+        writeAttribute(ATTR_EXTRA, entry.getExtra(), diffStream);
+        writeAttribute(ATTR_EXTRA, entry.getComment(), diffStream);
+        writeAttribute(ATTR_VERSION_MADE_BY, entry.getVersionMadeBy(), diffStream);
+        writeAttribute(ATTR_TIME, entry.getTime(), diffStream);
+        writeAttribute(ATTR_INTERNAL_ATTRIBUTES, entry.getInternalAttributes(), diffStream);
+        writeAttribute(ATTR_EXTERNAL_ATTRIBUTES, entry.getExternalAttributes(), diffStream);
         diffStream.writeByte(0);
     }
 
     @Override
     public void readAttributes(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
         do {
-            byte command = diffStream.readByte();
-            if (command == 0) {
-                return;
+            switch (diffStream.readByte()) {
+                case 0: return;
+                case ATTR_EXTRA: entry.setExtra(readBytes(diffStream)); break;
+                case ATTR_COMMENT: entry.setComment(readString(diffStream)); break;
+                case ATTR_VERSION_MADE_BY: entry.setVersionMadeBy(diffStream.readInt()); break;
+                case ATTR_TIME: entry.setTime(diffStream.readLong()); break;
+                case ATTR_INTERNAL_ATTRIBUTES: entry.setInternalAttributes(diffStream.readInt()); break;
+                case ATTR_EXTERNAL_ATTRIBUTES: entry.setExternalAttributes(diffStream.readLong()); break;
             }
-
-            if (command == ATTR_EXTRA) {
-                short length = diffStream.readShort();
-                byte[] extra = new byte[length];
-                diffStream.readFully(extra);
-                entry.setExtra(extra);
-            }
-
-            if (command == ATTR_COMMENT) {
-                short length = diffStream.readShort();
-                byte[] commentBytes = new byte[length];
-                diffStream.readFully(commentBytes);
-                entry.setComment(new String(commentBytes, "UTF-8"));
-            }
-
-            if (command == ATTR_VERSION_MADE_BY) {
-                entry.setVersionMadeBy(diffStream.readInt());
-            }
-
-            if (command == ATTR_TIME) {
-                entry.setTime(diffStream.readLong());
-            }
-
-            if (command == ATTR_INTERNAL_ATTRIBUTES) {
-                entry.setInternalAttributes(diffStream.readInt());
-            }
-
-            if (command == ATTR_EXTERNAL_ATTRIBUTES) {
-                entry.setExternalAttributes(diffStream.readLong());
-            }
-
         } while (true);
     }
 
@@ -117,52 +72,19 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
 
     @Override
     public void writeAttributesDiff(ZipArchiveEntry entryBefore, ZipArchiveEntry entryAfter, DataOutputStream diffStream) throws IOException {
-        if (!Arrays.equals(entryBefore.getExtra(), entryAfter.getExtra())) {
-            diffStream.writeByte(ATTR_EXTRA);
-
-            byte[] extra = entryAfter.getExtra();
-            if (extra != null) {
-                diffStream.writeShort(extra.length);
-                diffStream.write(extra);
-            } else {
-                diffStream.writeShort(0);
-            }
-        }
-
-        if (!Objects.deepEquals(entryBefore.getComment(), entryAfter.getComment())) {
-            diffStream.writeByte(ATTR_COMMENT);
-
-            String comment = entryAfter.getComment();
-            if (comment != null) {
-                byte[] commentBytes = comment.getBytes("UTF-8");
-                diffStream.writeShort(commentBytes.length);
-                diffStream.write(commentBytes);
-            } else {
-                diffStream.writeShort(0);
-            }
-        }
-
-        if (entryBefore.getVersionMadeBy() != entryAfter.getVersionMadeBy()) {
-            diffStream.writeByte(ATTR_VERSION_MADE_BY);
-            diffStream.writeInt(entryAfter.getVersionMadeBy());
-        }
-
-        if (entryBefore.getTime() != entryAfter.getTime()) {
-            diffStream.writeByte(ATTR_TIME);
-            diffStream.writeLong(entryAfter.getTime());
-        }
-
-        if (entryBefore.getInternalAttributes() != entryAfter.getInternalAttributes()) {
-            diffStream.writeByte(ATTR_INTERNAL_ATTRIBUTES);
-            diffStream.writeInt(entryAfter.getInternalAttributes());
-        }
-
-        if (entryBefore.getExternalAttributes() != entryAfter.getExternalAttributes()) {
-            diffStream.writeByte(ATTR_INTERNAL_ATTRIBUTES);
-            diffStream.writeLong(entryAfter.getExternalAttributes());
-        }
-
+        diffAttributes(ATTR_EXTRA, entryBefore.getExtra(), entryAfter.getExtra(), diffStream);
+        diffAttributes(ATTR_COMMENT, entryBefore.getComment(), entryAfter.getComment(), diffStream);
+        diffAttributes(ATTR_VERSION_MADE_BY, entryBefore.getVersionMadeBy(), entryAfter.getVersionMadeBy(), diffStream);
+        diffAttributes(ATTR_TIME, entryBefore.getTime(), entryAfter.getTime(), diffStream);
+        diffAttributes(ATTR_INTERNAL_ATTRIBUTES, entryBefore.getInternalAttributes(), entryAfter.getInternalAttributes(), diffStream);
+        diffAttributes(ATTR_EXTERNAL_ATTRIBUTES, entryBefore.getExternalAttributes(), entryAfter.getExternalAttributes(), diffStream);
         diffStream.writeByte(0);
+    }
+
+    @Override
+    public void readEntrySizeAndChecksum(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
+        entry.setCrc(diffStream.readLong());
+        entry.setSize(diffStream.readInt());
     }
 
     @Override
@@ -172,12 +94,6 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
 
         diffStream.writeLong(checksum.getValue());
         diffStream.writeInt(data.length);
-    }
-
-    @Override
-    public void readEntrySizeAndChecksum(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
-        entry.setCrc(diffStream.readLong());
-        entry.setSize(diffStream.readInt());
     }
 
     @Override

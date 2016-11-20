@@ -2,6 +2,8 @@ package org.rogach.ardiff;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
@@ -125,7 +127,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             int signatureLength = IOUtils.readFully(in, signature);
             in.reset();
             if (ZipArchiveInputStream.matches(signature, signatureLength)) {
-                return "zip";
+                return ArchiveStreamFactory.ZIP;
             }
             throw new ArchiveDiffException("Unable to detect archive type - no supported archive type found for signature");
         } catch (IOException ex) {
@@ -139,7 +141,7 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
 
     static String getArchiverType(ArchiveEntry entry) {
         if (entry.getName().endsWith(".zip")) {
-            return "zip";
+            return ArchiveStreamFactory.ZIP;
         } else {
             return null;
         }

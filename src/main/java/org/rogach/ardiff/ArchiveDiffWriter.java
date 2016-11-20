@@ -11,6 +11,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedOutputStream;
 
@@ -80,12 +81,12 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
     default void writeEntryRemoved(GenArchiveEntry entry, DataOutputStream diffStream) throws IOException {
         diffStream.writeByte(ArchiveDiff.COMMAND_REMOVE);
-        writePath(entry.getName(), diffStream);
+        writeString(entry.getName(), diffStream);
     }
 
     default void writeEntryAdded(ArchiveEntryWithData<GenArchiveEntry> entryWithData, DataOutputStream diffStream) throws IOException {
         diffStream.writeByte(ArchiveDiff.COMMAND_ADD);
-        writePath(entryWithData.entry.getName(), diffStream);
+        writeString(entryWithData.entry.getName(), diffStream);
 
         writeAttributes(entryWithData.entry, diffStream);
 
@@ -115,13 +116,13 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
         if (attributesDifferent && !dataDifferent) {
             diffStream.writeByte(ArchiveDiff.COMMAND_UPDATE_ATTRIBUTES);
-            writePath(entryAfter.entry.getName(), diffStream);
+            writeString(entryAfter.entry.getName(), diffStream);
 
             writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
         } else {
             if (ArchiveDiff.isSupportedArchive(entryAfter.entry)) {
                 diffStream.writeByte(ArchiveDiff.COMMAND_ARCHIVE_PATCH);
-                writePath(entryAfter.entry.getName(), diffStream);
+                writeString(entryAfter.entry.getName(), diffStream);
 
                 writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
 
@@ -175,7 +176,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                 if (entryDiff.length < entryAfter.data.length * 0.7) {
 
                     diffStream.writeByte(ArchiveDiff.COMMAND_PATCH);
-                    writePath(entryAfter.entry.getName(), diffStream);
+                    writeString(entryAfter.entry.getName(), diffStream);
 
                     writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
 
@@ -187,7 +188,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                 } else {
 
                     diffStream.writeByte(ArchiveDiff.COMMAND_REPLACE);
-                    writePath(entryAfter.entry.getName(), diffStream);
+                    writeString(entryAfter.entry.getName(), diffStream);
 
                     writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
 
@@ -205,10 +206,68 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
     void writeAttributesDiff(GenArchiveEntry entryBefore, GenArchiveEntry entryAfter, DataOutputStream diffStream) throws IOException;
 
-    default void writePath(String path, DataOutputStream diffStream) throws IOException {
-        byte[] bytes = path.getBytes("UTF-8");
-        diffStream.writeShort(bytes.length);
-        diffStream.write(bytes);
+    default void writeString(String s, DataOutputStream diffStream) throws IOException {
+        if (s != null) {
+            writeBytes(s.getBytes("UTF-8"), diffStream);
+        } else {
+            diffStream.writeShort(0);
+        }
     }
 
+    default void writeBytes(byte[] bytes, DataOutputStream diffStream) throws IOException {
+        if (bytes != null) {
+            diffStream.writeShort(bytes.length);
+            diffStream.write(bytes);
+        } else {
+            diffStream.writeShort(0);
+        }
+    }
+
+    default void writeAttribute(byte code, int value, DataOutputStream diffStream) throws IOException {
+        diffStream.writeByte(code);
+        diffStream.writeInt(value);
+    }
+
+    default void writeAttribute(byte code, long value, DataOutputStream diffStream) throws IOException {
+        diffStream.writeByte(code);
+        diffStream.writeLong(value);
+    }
+
+    default void writeAttribute(byte code, String value, DataOutputStream diffStream) throws IOException {
+        if (value != null) {
+            diffStream.writeByte(code);
+            writeString(value, diffStream);
+        }
+    }
+
+    default void writeAttribute(byte code, byte[] value, DataOutputStream diffStream) throws IOException {
+        if (value != null) {
+            diffStream.writeByte(code);
+            writeBytes(value, diffStream);
+        }
+    }
+
+    default void diffAttributes(byte code, byte[] valueBefore, byte[] valueAfter, DataOutputStream diffStream) throws IOException {
+        if (!Arrays.equals(valueBefore, valueAfter)) {
+            writeAttribute(code, valueAfter, diffStream);
+        }
+    }
+
+    default void diffAttributes(byte code, String valueBefore, String valueAfter, DataOutputStream diffStream) throws IOException {
+        if (!Objects.equals(valueBefore, valueAfter)) {
+            writeAttribute(code, valueAfter, diffStream);
+        }
+    }
+
+    default void diffAttributes(byte code, int valueBefore, int valueAfter, DataOutputStream diffStream) throws IOException {
+        if (valueBefore != valueAfter) {
+            writeAttribute(code, valueAfter, diffStream);
+        }
+    }
+
+    default void diffAttributes(byte code, long valueBefore, long valueAfter, DataOutputStream diffStream) throws IOException {
+        if (valueBefore != valueAfter) {
+            writeAttribute(code, valueAfter, diffStream);
+        }
+    }
 }

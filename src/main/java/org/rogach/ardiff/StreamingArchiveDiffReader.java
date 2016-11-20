@@ -111,7 +111,7 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
         checkedDiffStream.getChecksum().reset();
         command = diffStream.readByte();
         if (command != 0) {
-            commandPath = utils.readPath(diffStream);
+            commandPath = utils.readString(diffStream);
         } else {
             commandPath = null;
         }
