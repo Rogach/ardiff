@@ -14,7 +14,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
 
         List<ArchiveEntryWithData<GenArchiveEntry>> entries = listAllEntries(archiveInputStream);
 
-        ArchiveOutputStream archiveOutputStream = new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), output);
+        ArchiveOutputStream archiveOutputStream = createArchiveOutputStream(output);
 
         for (ArchiveEntryWithData<GenArchiveEntry> archiveEntry : entries) {
             if (ArchiveDiff.isSupportedArchive(archiveEntry.entry)) {

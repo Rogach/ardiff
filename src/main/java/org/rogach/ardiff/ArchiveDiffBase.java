@@ -1,15 +1,19 @@
 package org.rogach.ardiff;
 
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.*;
 import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.*;
 
 public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
 
     String archiverName();
+
+    default ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws ArchiveException {
+        return new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), output);
+    }
 
     boolean attributesEqual(GenArchiveEntry entryBefore, GenArchiveEntry entryAfter);
 

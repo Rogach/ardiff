@@ -27,7 +27,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         CountingInputStream countingDiffStream = new CountingInputStream(checkedDiffStream);
         DataInputStream diffStream = new DataInputStream(countingDiffStream);
 
-        ArchiveOutputStream archiveStreamAfter = new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), after);
+        ArchiveOutputStream archiveStreamAfter = createArchiveOutputStream(after);
 
         byte[] header = new byte[8];
         diffStream.readFully(header);

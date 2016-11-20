@@ -1,13 +1,17 @@
 package org.rogach.ardiff.formats;
 
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.rogach.ardiff.ArchiveDiff;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Objects;
 
 public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
@@ -27,6 +31,12 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
         return ArchiveStreamFactory.TAR;
     }
 
+    @Override
+    public ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws ArchiveException {
+        TarArchiveOutputStream outputStream = new TarArchiveOutputStream(output);
+        outputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+        return outputStream;
+    }
 
     @Override
     public TarArchiveEntry createNewArchiveEntry(String path, int length) {

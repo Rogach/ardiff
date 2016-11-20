@@ -44,7 +44,7 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
         countingDiffStream = new CountingInputStream(checkedDiffStream);
         diffStream = new DataInputStream(countingDiffStream);
 
-        archiveStreamAfter = new ArchiveStreamFactory().createArchiveOutputStream(utils.archiverName(), after);
+        archiveStreamAfter = utils.createArchiveOutputStream(after);
 
         byte[] header = new byte[8];
         diffStream.readFully(header);
