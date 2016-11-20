@@ -4,6 +4,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
@@ -104,8 +105,10 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
 
     @SuppressWarnings("unchecked")
     public static ArchiveDiff getInstance(String archiveType) {
-        if ("zip".equals(archiveType)) {
+        if (ArchiveStreamFactory.ZIP.equals(archiveType)) {
             return new ZipArchiveDiff();
+        } else if (ArchiveStreamFactory.TAR.equals(archiveType)) {
+            return new TarArchiveDiff();
         } else {
             throw new RuntimeException("Unsupported archive type: " + archiveType);
         }
@@ -128,6 +131,15 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             in.reset();
             if (ZipArchiveInputStream.matches(signature, signatureLength)) {
                 return ArchiveStreamFactory.ZIP;
+            } else {
+
+                final byte[] tarheader = new byte[512];
+                in.mark(tarheader.length);
+                signatureLength = IOUtils.readFully(in, tarheader);
+                in.reset();
+                if (TarArchiveInputStream.matches(tarheader, signatureLength)) {
+                    return ArchiveStreamFactory.TAR;
+                }
             }
             throw new ArchiveDiffException("Unable to detect archive type - no supported archive type found for signature");
         } catch (IOException ex) {
@@ -142,6 +154,8 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
     static String getArchiverType(ArchiveEntry entry) {
         if (entry.getName().endsWith(".zip")) {
             return ArchiveStreamFactory.ZIP;
+        } else if (entry.getName().endsWith(".tar")) {
+            return ArchiveStreamFactory.TAR;
         } else {
             return null;
         }
