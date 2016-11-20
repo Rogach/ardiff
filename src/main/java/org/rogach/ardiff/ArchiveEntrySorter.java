@@ -28,9 +28,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
 
                 byte[] sortedArchive = sortedArchiveOutputStream.toByteArray();
 
-                setEntryForData(archiveEntry.entry, sortedArchive);
-
-                archiveOutputStream.putArchiveEntry(archiveEntry.entry);
+                archiveOutputStream.putArchiveEntry(getEntryForData(archiveEntry.entry, sortedArchive));
                 IOUtils.copy(new ByteArrayInputStream(sortedArchive), archiveOutputStream);
                 archiveOutputStream.closeArchiveEntry();
 
@@ -46,6 +44,6 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
         archiveOutputStream.finish();
     }
 
-    void setEntryForData(GenArchiveEntry entry, byte[] data);
+    GenArchiveEntry getEntryForData(GenArchiveEntry entry, byte[] data);
 
 }

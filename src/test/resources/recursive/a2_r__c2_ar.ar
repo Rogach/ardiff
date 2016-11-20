@@ -1,0 +1,45 @@
+!<arch>
+a.txt/          0           0     0     644     989       `
+We thrive on euphemism.  We call multi-megaton bombs "Peace-keepers", closet
+size apartments "efficient" and incomprehensible artworks "innovative".  In
+fact, "euphemism" has become a euphemism for "bald-faced lie".  And now, here
+are some of the euphemisms so colorfully employed in Personal Ads:
+
+EUPHEMISM			REALITY
+-------------------		-------------------------
+Excited about life's journey	No concept of reality
+Spiritually evolved		Oversensitive
+Moody				Manic-depressive
+Soulful				Quiet manic-depressive
+Poet				Boring manic-depressive
+Sultry/Sensual			Easy
+Uninhibited			Lacking basic social skills
+Unaffected and earthy		Slob and lacking basic social skills
+Irreverent			Nasty and lacking basic social skills
+Very human			Quasimodo's best friend
+Swarthy				Sweaty even when cold or standing still
+Spontaneous/Eclectic		Scatterbrained
+Flexible			Desperate
+Aging child			Self-centered adult
+Youthful			Over 40 and trying to deny it
+Good sense of humor		Watches a lot of television
+
+r.ar/           0           0     0     644     1102      `
+!<arch>
+c.txt/          0           0     0     644     1034      `
+... an anecdote from IBM's Yorktown Heights Research Center.  When a
+programmer used his new computer terminal, all was fine when he was sitting
+down, but he couldn't log in to the system when he was standing up.  That
+behavior was 100 percent repeatable: he could always log in when sitting and
+never when standing.
+
+Many of us just sit back and marvel at such a story; how could that terminal
+know whether the poor guy was sitting or standing?  Good debuggers, though,
+know that there has to be a reason.  Electrical theories are the easiest to
+hypothesize: was there a loose with under the carpet, or problems with static
+electricity?  But electrical problems are rarely consistently reproducible.
+An alert IBMer finally noticed that the problem was in the terminal's keyboard:
+the tops of two keys were switched.  When the programmer was seated he was a
+touch typist and the problem went unnoticed, but when he stood he was led
+astray by hunting and pecking.
+  -- "Programming Pearls" column, by Jon Bentley in CACM February 1985

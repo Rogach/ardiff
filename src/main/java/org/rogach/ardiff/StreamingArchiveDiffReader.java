@@ -3,6 +3,7 @@ package org.rogach.ardiff;
 import com.nothome.delta.GDiffPatcher;
 import org.apache.commons.compress.archivers.*;
 import org.apache.commons.compress.utils.BoundedInputStream;
+import org.apache.commons.compress.utils.CountingInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
@@ -29,6 +30,7 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
 
     ArchiveInputStream archiveStreamBefore;
     CheckedInputStream checkedDiffStream;
+    CountingInputStream countingDiffStream;
     DataInputStream diffStream;
     ArchiveOutputStream archiveStreamAfter;
 
@@ -39,7 +41,8 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
     void streamingApplyDiff() throws ArchiveException, IOException, ArchiveDiffException {
         archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(utils.archiverName(), before);
         checkedDiffStream = new CheckedInputStream(diff, new CRC32());
-        diffStream = new DataInputStream(checkedDiffStream);
+        countingDiffStream = new CountingInputStream(checkedDiffStream);
+        diffStream = new DataInputStream(countingDiffStream);
 
         archiveStreamAfter = new ArchiveStreamFactory().createArchiveOutputStream(utils.archiverName(), after);
 
@@ -121,7 +124,7 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
         long checksum = checkedDiffStream.getChecksum().getValue();
         long expectedChecksum = diffStream.readLong();
         if (checksum != expectedChecksum) {
-            throw new ArchiveDiffCorruptedException("Checksum mismatch at offset " + diffStream.read());
+            throw new ArchiveDiffCorruptedException("Checksum mismatch at offset " + countingDiffStream.getBytesRead());
         }
     }
 
@@ -139,11 +142,13 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
 
 
     private void addEntry() throws IOException, ArchiveDiffCorruptedException {
-        GenArchiveEntry entry = utils.createNewArchiveEntry(commandPath);
+        int length = diffStream.readInt();
 
-        utils.readAttributes(entry, diffStream);
+        GenArchiveEntry entry = utils.createNewArchiveEntry(commandPath, length);
 
-        utils.readEntrySizeAndChecksum(entry, diffStream);
+        utils.readEntryChecksum(entry, diffStream);
+
+        entry = utils.readAttributes(entry, diffStream);
 
         archiveStreamAfter.putArchiveEntry(entry);
         int dataLength = diffStream.readInt();
@@ -158,11 +163,13 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
     }
 
     private void replaceEntry() throws IOException {
-        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry);
+        int length = diffStream.readInt();
 
-        utils.readAttributes(newEntry, diffStream);
+        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry, length);
 
-        utils.readEntrySizeAndChecksum(newEntry, diffStream);
+        utils.readEntryChecksum(newEntry, diffStream);
+
+        newEntry = utils.readAttributes(newEntry, diffStream);
 
         archiveStreamAfter.putArchiveEntry(newEntry);
         int dataLength = diffStream.readInt();
@@ -171,11 +178,13 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
     }
 
     private void patchEntry() throws IOException {
-        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry);
+        int length = diffStream.readInt();
 
-        utils.readAttributes(newEntry, diffStream);
+        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry, length);
 
-        utils.readEntrySizeAndChecksum(newEntry, diffStream);
+        utils.readEntryChecksum(newEntry, diffStream);
+
+        newEntry = utils.readAttributes(newEntry, diffStream);
 
         ByteArrayOutputStream dataBeforeOutputStream = new ByteArrayOutputStream();
         IOUtils.copy(archiveStreamBefore, dataBeforeOutputStream);
@@ -190,9 +199,11 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
     }
 
     private void updateEntryAttributes() throws IOException {
-        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry);
+        int length = diffStream.readInt();
 
-        utils.readAttributes(newEntry, diffStream);
+        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry, length);
+
+        newEntry = utils.readAttributes(newEntry, diffStream);
 
         archiveStreamAfter.putArchiveEntry(newEntry);
         IOUtils.copy(archiveStreamBefore, archiveStreamAfter);
@@ -200,11 +211,13 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
     }
 
     private void patchArchiveEntry() throws IOException, ArchiveDiffException, ArchiveException {
-        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry);
+        int length = diffStream.readInt();
 
-        utils.readAttributes(newEntry, diffStream);
+        GenArchiveEntry newEntry = utils.copyArchiveEntry(entry, length);
 
-        utils.readEntrySizeAndChecksum(newEntry, diffStream);
+        utils.readEntryChecksum(newEntry, diffStream);
+
+        newEntry = utils.readAttributes(newEntry, diffStream);
 
         int patchLength = diffStream.readInt();
 

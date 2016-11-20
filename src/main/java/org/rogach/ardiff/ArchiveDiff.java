@@ -4,6 +4,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
@@ -109,6 +110,8 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             return new ZipArchiveDiff();
         } else if (ArchiveStreamFactory.TAR.equals(archiveType)) {
             return new TarArchiveDiff();
+        } else if (ArchiveStreamFactory.AR.equals(archiveType)) {
+            return new ArArchiveDiff();
         } else {
             throw new RuntimeException("Unsupported archive type: " + archiveType);
         }
@@ -131,6 +134,8 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             in.reset();
             if (ZipArchiveInputStream.matches(signature, signatureLength)) {
                 return ArchiveStreamFactory.ZIP;
+            } else if (ArArchiveInputStream.matches(signature, signatureLength)) {
+                return ArchiveStreamFactory.AR;
             } else {
 
                 final byte[] tarheader = new byte[512];
@@ -156,6 +161,10 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
             return ArchiveStreamFactory.ZIP;
         } else if (entry.getName().endsWith(".tar")) {
             return ArchiveStreamFactory.TAR;
+        } else if (entry.getName().endsWith(".ar")) {
+            return ArchiveStreamFactory.AR;
+        } else if (entry.getName().endsWith(".deb")) {
+            return ArchiveStreamFactory.AR;
         } else {
             return null;
         }

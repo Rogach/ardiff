@@ -1,0 +1,64 @@
+!<arch>
+a.txt/          0           0     0     644     989       `
+We thrive on euphemism.  We call multi-megaton bombs "Peace-keepers", closet
+size apartments "efficient" and incomprehensible artworks "innovative".  In
+fact, "euphemism" has become a euphemism for "bald-faced lie".  And now, here
+are some of the euphemisms so colorfully employed in Personal Ads:
+
+EUPHEMISM			REALITY
+-------------------		-------------------------
+Excited about life's journey	No concept of reality
+Spiritually evolved		Oversensitive
+Moody				Manic-depressive
+Soulful				Quiet manic-depressive
+Poet				Boring manic-depressive
+Sultry/Sensual			Easy
+Uninhibited			Lacking basic social skills
+Unaffected and earthy		Slob and lacking basic social skills
+Irreverent			Nasty and lacking basic social skills
+Very human			Quasimodo's best friend
+Swarthy				Sweaty even when cold or standing still
+Spontaneous/Eclectic		Scatterbrained
+Flexible			Desperate
+Aging child			Self-centered adult
+Youthful			Over 40 and trying to deny it
+Good sense of humor		Watches a lot of television
+
+b.txt/          0           0     0     644     1197      `
+Some of the most interesting documents from Sweden's middle ages are the
+old county laws (well, we never had counties but it's the nearest equivalent
+I can find for "landskap").  These laws were written down sometime in the
+13th century, but date back even down into Viking times.  The oldest one is
+the Vastgota law which clearly has pagan influences, thinly covered with some
+Christian stuff.  In this law, we find a page about "lekare", which is the
+Old Norse word for a performing artist, actor/jester/musician etc.  Here is
+an approximate translation, where I have written "artist" as equivalent of
+"lekare".
+	"If an artist is beaten, none shall pay fines for it.  If an artist
+	is wounded, one such who goes with hurdie-gurdie or travels with
+	fiddle or drum, then the people shall take a wild heifer and bring
+	it out on the hillside.  Then they shall shave off all hair from the
+	heifer's tail, and grease the tail.  Then the artist shall be given
+	newly greased shoes.  Then he shall take hold of the heifer's tail,
+	and a man shall strike it with a sharp whip.  If he can hold her, he
+	shall have the animal.  If he cannot hold her, he shall endure what
+	he received, shame and wounds."
+
+c.txt/          0           0     0     644     1033      `
+... an anecdote from IBM's Yorktown Heights Research Center.  When a
+programmer used his new computer terminal, all was fine when he was sitting
+down, but he couldn't log in to the system when he was standing up.  That
+behavior was 100 percent repeatable: he could always log in when sitting and
+never when standing.
+
+Most of us just sit back and marvel at such a story; how could that terminal
+know whether the poor guy was sitting or standing?  Good debuggers, though,
+know that there has to be a reason.  Electrical theories are the easiest to
+hypothesize: was there a loose with under the carpet, or problems with static
+electricity?  But electrical problems are rarely consistently reproducible.
+An alert IBMer finally noticed that the problem was in the terminal's keyboard:
+the tops of two keys were switched.  When the programmer was seated he was a
+touch typist and the problem went unnoticed, but when he stood he was led
+astray by hunting and pecking.
+	-- "Programming Pearls" column, by Jon Bentley in CACM February 1985
+

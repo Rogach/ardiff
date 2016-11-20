@@ -97,7 +97,7 @@ public class DiffTests {
     public void testSimple() throws Exception {
         int archivePairsTested = 0;
 
-        for (String archiveType : Arrays.asList("zip", "tar")) {
+        for (String archiveType : Arrays.asList("zip", "tar", "ar")) {
             List<String> archiveNames = new ArrayList<>();
             for (int a = 0; a <= 2; a++) {
                 for (int b = 0; b <= 2; b++) {
@@ -133,15 +133,10 @@ public class DiffTests {
     }
 
     @Test
-    public void testStage() throws Exception {
-        testDiffApplyInvariant("/tar-simple/__c1.tar", "/tar-simple/_b1_.tar", false);
-    }
-
-    @Test
     public void testRecursive() throws Exception {
         int archivePairsTested = 0;
-        for (String outerArchiveType : Arrays.asList("zip", "tar")) {
-            for (String innerArchiveType : Arrays.asList("zip", "tar")) {
+        for (String outerArchiveType : Arrays.asList("zip", "tar", "ar")) {
+            for (String innerArchiveType : Arrays.asList("zip", "tar", "ar")) {
                 List<String> archiveNames = new ArrayList<>();
                 for (int a = 0; a <= 2; a++) {
                     for (int b = 0; b <= 2; b++) {

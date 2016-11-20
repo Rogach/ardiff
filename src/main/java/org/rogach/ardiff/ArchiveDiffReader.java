@@ -2,7 +2,7 @@ package org.rogach.ardiff;
 
 import com.nothome.delta.GDiffPatcher;
 import org.apache.commons.compress.archivers.*;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.utils.CountingInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
@@ -24,7 +24,8 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
     ) throws ArchiveException, IOException, ArchiveDiffException {
         ArchiveInputStream archiveStreamBefore = new ArchiveStreamFactory().createArchiveInputStream(archiverName(), before);
         CheckedInputStream checkedDiffStream = new CheckedInputStream(diff, new CRC32());
-        DataInputStream diffStream = new DataInputStream(checkedDiffStream);
+        CountingInputStream countingDiffStream = new CountingInputStream(checkedDiffStream);
+        DataInputStream diffStream = new DataInputStream(countingDiffStream);
 
         ArchiveOutputStream archiveStreamAfter = new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), after);
 
@@ -68,7 +69,7 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
             long checksum = checkedDiffStream.getChecksum().getValue();
             long expectedChecksum = diffStream.readLong();
             if (checksum != expectedChecksum) {
-                throw new ArchiveDiffCorruptedException("Checksum mismatch at offset " + diffStream.read());
+                throw new ArchiveDiffCorruptedException("Checksum mismatch at offset " + countingDiffStream.getBytesRead());
             }
         } while (true);
 
@@ -81,16 +82,18 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
         archiveStreamAfter.finish();
     }
 
-    GenArchiveEntry createNewArchiveEntry(String path);
+    GenArchiveEntry createNewArchiveEntry(String path, int length);
 
-    GenArchiveEntry copyArchiveEntry(GenArchiveEntry orig) throws IOException;
+    GenArchiveEntry copyArchiveEntry(GenArchiveEntry orig, int length) throws IOException;
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryAdd(String path, DataInputStream diffStream) throws IOException {
-        GenArchiveEntry entry = createNewArchiveEntry(path);
+        int length = diffStream.readInt();
 
-        readAttributes(entry, diffStream);
+        GenArchiveEntry entry = createNewArchiveEntry(path, length);
 
-        readEntrySizeAndChecksum(entry, diffStream);
+        readEntryChecksum(entry, diffStream);
+
+        entry = readAttributes(entry, diffStream);
 
         int dataLength = diffStream.readInt();
         byte[] data = new byte[dataLength];
@@ -100,11 +103,13 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
     }
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryReplace(GenArchiveEntry before, DataInputStream diffStream) throws IOException {
-        GenArchiveEntry entry = copyArchiveEntry(before);
+        int length = diffStream.readInt();
 
-        readAttributes(entry, diffStream);
+        GenArchiveEntry entry = copyArchiveEntry(before, length);
 
-        readEntrySizeAndChecksum(entry, diffStream);
+        readEntryChecksum(entry, diffStream);
+
+        entry = readAttributes(entry, diffStream);
 
         int dataLength = diffStream.readInt();
         byte[] data = new byte[dataLength];
@@ -114,11 +119,13 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
     }
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryPatch(ArchiveEntryWithData<GenArchiveEntry> entryBefore, DataInputStream diffStream) throws IOException {
-        GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry);
+        int length = diffStream.readInt();
 
-        readAttributes(entryAfter, diffStream);
+        GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry, length);
 
-        readEntrySizeAndChecksum(entryAfter, diffStream);
+        readEntryChecksum(entryAfter, diffStream);
+
+        entryAfter = readAttributes(entryAfter, diffStream);
 
         int patchLength = diffStream.readInt();
         byte[] patch = new byte[patchLength];
@@ -130,11 +137,13 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
     }
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryArchivePatch(ArchiveEntryWithData<GenArchiveEntry> entryBefore, DataInputStream diffStream) throws IOException, ArchiveDiffException, ArchiveException {
-        GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry);
+        int length = diffStream.readInt();
 
-        readAttributes(entryAfter, diffStream);
+        GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry, length);
 
-        readEntrySizeAndChecksum(entryAfter, diffStream);
+        readEntryChecksum(entryAfter, diffStream);
+
+        entryAfter = readAttributes(entryAfter, diffStream);
 
         diffStream.readInt();
 
@@ -150,16 +159,18 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
     }
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryUpdateAttributes(ArchiveEntryWithData<GenArchiveEntry> entryBefore, DataInputStream diffStream) throws IOException {
-        GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry);
+        int length = diffStream.readInt();
 
-        readAttributes(entryAfter, diffStream);
+        GenArchiveEntry entryAfter = copyArchiveEntry(entryBefore.entry, length);
+
+        entryAfter = readAttributes(entryAfter, diffStream);
 
         return new ArchiveEntryWithData<>(entryAfter, entryBefore.data);
     }
 
-    void readEntrySizeAndChecksum(GenArchiveEntry entry, DataInputStream diffStream) throws IOException;
+    default void readEntryChecksum(GenArchiveEntry entry, DataInputStream diffStream) throws IOException {}
 
-    void readAttributes(GenArchiveEntry entry, DataInputStream diffStream) throws IOException;
+    GenArchiveEntry readAttributes(GenArchiveEntry entry, DataInputStream diffStream) throws IOException;
 
     default String readString(DataInputStream diffStream) throws IOException {
         return new String(readBytes(diffStream), "UTF-8");

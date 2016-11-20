@@ -25,13 +25,17 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    public ZipArchiveEntry createNewArchiveEntry(String path) {
-        return new ZipArchiveEntry(path);
+    public ZipArchiveEntry createNewArchiveEntry(String path, int length) {
+        ZipArchiveEntry newEntry = new ZipArchiveEntry(path);
+        newEntry.setSize(length);
+        return newEntry;
     }
 
     @Override
-    public ZipArchiveEntry copyArchiveEntry(ZipArchiveEntry orig) throws IOException {
-        return new ZipArchiveEntry(orig);
+    public ZipArchiveEntry copyArchiveEntry(ZipArchiveEntry orig, int length) throws IOException {
+        ZipArchiveEntry newEntry = new ZipArchiveEntry(orig);
+        newEntry.setSize(length);
+        return newEntry;
     }
 
     @Override
@@ -46,10 +50,10 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    public void readAttributes(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
+    public ZipArchiveEntry readAttributes(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
         do {
             switch (diffStream.readByte()) {
-                case 0: return;
+                case 0: return entry;
                 case ATTR_EXTRA: entry.setExtra(readBytes(diffStream)); break;
                 case ATTR_COMMENT: entry.setComment(readString(diffStream)); break;
                 case ATTR_VERSION_MADE_BY: entry.setVersionMadeBy(diffStream.readInt()); break;
@@ -82,27 +86,26 @@ class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    public void readEntrySizeAndChecksum(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
+    public void readEntryChecksum(ZipArchiveEntry entry, DataInputStream diffStream) throws IOException {
         entry.setCrc(diffStream.readLong());
-        entry.setSize(diffStream.readInt());
     }
 
     @Override
-    public void writeEntrySizeAndChecksum(byte[] data, DataOutputStream diffStream) throws IOException {
+    public void writeEntryChecksum(byte[] data, DataOutputStream diffStream) throws IOException {
         CRC32 checksum = new CRC32();
         checksum.update(data);
 
         diffStream.writeLong(checksum.getValue());
-        diffStream.writeInt(data.length);
     }
 
     @Override
-    public void setEntryForData(ZipArchiveEntry entry, byte[] data) {
+    public ZipArchiveEntry getEntryForData(ZipArchiveEntry entry, byte[] data) {
         CRC32 checksum = new CRC32();
         checksum.update(data);
 
         entry.setCrc(checksum.getValue());
         entry.setSize(data.length);
+        return entry;
     }
 }
 

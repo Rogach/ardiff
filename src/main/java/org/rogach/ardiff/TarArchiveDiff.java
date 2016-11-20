@@ -28,15 +28,19 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
 
 
     @Override
-    public TarArchiveEntry createNewArchiveEntry(String path) {
-        return new TarArchiveEntry(path);
+    public TarArchiveEntry createNewArchiveEntry(String path, int length) {
+        TarArchiveEntry newEntry = new TarArchiveEntry(path);
+        newEntry.setSize(length);
+        return newEntry;
     }
 
     @Override
-    public TarArchiveEntry copyArchiveEntry(TarArchiveEntry orig) throws IOException {
+    public TarArchiveEntry copyArchiveEntry(TarArchiveEntry orig, int length) throws IOException {
         byte[] header = new byte[TarConstants.DEFAULT_RCDSIZE];
         orig.writeEntryHeader(header);
-        return new TarArchiveEntry(header);
+        TarArchiveEntry newEntry = new TarArchiveEntry(header);
+        newEntry.setSize(length);
+        return newEntry;
     }
 
     @Override
@@ -54,11 +58,11 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
     }
 
     @Override
-    public void readAttributes(TarArchiveEntry entry, DataInputStream diffStream) throws IOException {
+    public TarArchiveEntry readAttributes(TarArchiveEntry entry, DataInputStream diffStream) throws IOException {
         do {
             byte command = diffStream.readByte();
             switch (command) {
-                case 0: return;
+                case 0: return entry;
                 case ATTR_MODE: entry.setMode(diffStream.readInt()); break;
                 case ATTR_USER_ID: entry.setUserId(diffStream.readLong()); break;
                 case ATTR_GROUP_ID: entry.setGroupId(diffStream.readLong()); break;
@@ -100,18 +104,9 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
     }
 
     @Override
-    public void readEntrySizeAndChecksum(TarArchiveEntry entry, DataInputStream diffStream) throws IOException {
-        entry.setSize(diffStream.readInt());
-    }
-
-    @Override
-    public void writeEntrySizeAndChecksum(byte[] data, DataOutputStream diffStream) throws IOException {
-        diffStream.writeInt(data.length);
-    }
-
-    @Override
-    public void setEntryForData(TarArchiveEntry entry, byte[] data) {
+    public TarArchiveEntry getEntryForData(TarArchiveEntry entry, byte[] data) {
         entry.setSize(data.length);
+        return entry;
     }
 
 }
