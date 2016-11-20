@@ -188,6 +188,8 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
     static String getArchiverType(ArchiveEntry entry) {
         if (entry.getName().endsWith(".zip")) {
             return "zip";
+        } else if (entry.getName().endsWith(".jar")) {
+            return "jar";
         } else if (entry.getName().endsWith(".tar")) {
             return "tar";
         } else if (entry.getName().endsWith(".tar.gz")) {
