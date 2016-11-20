@@ -87,15 +87,14 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
     GenArchiveEntry copyArchiveEntry(GenArchiveEntry orig, int length) throws IOException;
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryAdd(String path, DataInputStream diffStream) throws IOException {
-        int length = diffStream.readInt();
+        int dataLength = diffStream.readInt();
 
-        GenArchiveEntry entry = createNewArchiveEntry(path, length);
+        GenArchiveEntry entry = createNewArchiveEntry(path, dataLength);
 
         readEntryChecksum(entry, diffStream);
 
         entry = readAttributes(entry, diffStream);
 
-        int dataLength = diffStream.readInt();
         byte[] data = new byte[dataLength];
         diffStream.readFully(data);
 
@@ -103,15 +102,14 @@ public interface ArchiveDiffReader<GenArchiveEntry extends ArchiveEntry>
     }
 
     default ArchiveEntryWithData<GenArchiveEntry> readEntryReplace(GenArchiveEntry before, DataInputStream diffStream) throws IOException {
-        int length = diffStream.readInt();
+        int dataLength = diffStream.readInt();
 
-        GenArchiveEntry entry = copyArchiveEntry(before, length);
+        GenArchiveEntry entry = copyArchiveEntry(before, dataLength);
 
         readEntryChecksum(entry, diffStream);
 
         entry = readAttributes(entry, diffStream);
 
-        int dataLength = diffStream.readInt();
         byte[] data = new byte[dataLength];
         diffStream.readFully(data);
 

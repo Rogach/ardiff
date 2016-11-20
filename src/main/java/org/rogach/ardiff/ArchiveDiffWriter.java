@@ -94,7 +94,6 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
         writeAttributes(entryWithData.entry, diffStream);
 
-        diffStream.writeInt(entryWithData.data.length);
         diffStream.write(entryWithData.data);
     }
 
@@ -204,7 +203,6 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
                     writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
 
-                    diffStream.writeInt(entryAfter.data.length);
                     diffStream.write(entryAfter.data);
 
                 }
