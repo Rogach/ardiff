@@ -1,7 +1,7 @@
 #!/bin/bash
 
-rm -rf zip-simple tar-simple ar-simple
-mkdir zip-simple tar-simple ar-simple
+rm -rf zip-simple tar-simple tar.gz-simple tar.xz-simple ar-simple
+mkdir zip-simple tar-simple tar.gz-simple tar.xz-simple ar-simple
 for a in "" a1 a2; do
     for b in "" b1 b2; do
         for c in "" c1 c2; do
@@ -27,9 +27,13 @@ for a in "" a1 a2; do
                 file_full_paths="$file_full_paths temp/d/c.txt"
             fi
 
-            zip -q zip-simple/${a}_${b}_${c}.zip -j temp $file_full_paths
-            tar cf tar-simple/${a}_${b}_${c}.tar -C temp $file_short_paths
-            ar cr ar-simple/${a}_${b}_${c}.ar $file_full_paths
+            if [[ "$file_full_paths" != "" ]]; then
+                zip -q zip-simple/${a}_${b}_${c}.zip -j temp $file_full_paths
+                tar cf tar-simple/${a}_${b}_${c}.tar -C temp $file_short_paths
+                tar czf tar.gz-simple/${a}_${b}_${c}.tar.gz -C temp $file_short_paths
+                tar cJf tar.xz-simple/${a}_${b}_${c}.tar.xz -C temp $file_short_paths
+                ar cr ar-simple/${a}_${b}_${c}.ar $file_full_paths
+            fi
 
             rm -rf temp
         done
@@ -39,8 +43,8 @@ done
 
 rm -rf recursive
 mkdir recursive
-for outer in zip tar ar; do
-    for inner in zip tar ar; do
+for outer in zip tar tar.gz tar.xz ar; do
+    for inner in zip tar tar.gz tar.xz ar; do
         for a in "" a1 a2; do
             for b in "" b1 b2; do
                 for c in "" c1 c2; do
@@ -60,11 +64,15 @@ for outer in zip tar ar; do
                         file_full_paths="$file_full_paths temp/r.$inner"
                     fi
 
-                    case "$outer" in
-                        "zip") zip -q recursive/${a}_r_${b}_${c}_$inner.zip -j temp $file_full_paths ;;
-                        "tar") tar cf recursive/${a}_r_${b}_${c}_$inner.tar -C temp $file_short_paths ;;
-                        "ar") ar cr recursive/${a}_r_${b}_${c}_$inner.ar $file_full_paths
-                    esac
+                    if [[ "$file_full_paths" != "" ]]; then
+                        case "$outer" in
+                            "zip") zip -q recursive/${a}_r_${b}_${c}_$inner.zip -j temp $file_full_paths ;;
+                            "tar") tar cf recursive/${a}_r_${b}_${c}_$inner.tar -C temp $file_short_paths ;;
+                            "tar.gz") tar czf recursive/${a}_r_${b}_${c}_$inner.tar.gz -C temp $file_short_paths ;;
+                            "tar.xz") tar cJf recursive/${a}_r_${b}_${c}_$inner.tar.xz -C temp $file_short_paths ;;
+                            "ar") ar cr recursive/${a}_r_${b}_${c}_$inner.ar $file_full_paths
+                        esac
+                    fi
 
                     rm -rf temp
                 done
