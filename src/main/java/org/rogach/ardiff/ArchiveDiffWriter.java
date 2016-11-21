@@ -4,14 +4,12 @@ import com.nothome.delta.Delta;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import org.rogach.ardiff.formats.ArArchiveDiff;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedOutputStream;
 
@@ -31,11 +29,9 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
         DataOutputStream diffStream = new DataOutputStream(checkedDiffStream);
         diffStream.write(ArchiveDiff.HEADER.getBytes("ASCII"));
 
-        List<ArchiveEntryWithData<GenArchiveEntry>> entriesBefore = listAllEntries(archiveStreamBefore, !(this instanceof ArArchiveDiff));
-        List<ArchiveEntryWithData<GenArchiveEntry>> entriesAfter = listAllEntries(archiveStreamAfter, !(this instanceof ArArchiveDiff));
-
-        Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorBefore = entriesBefore.iterator();
-        Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorAfter = entriesAfter.iterator();
+        boolean sortInputArchives = !(assumeOrdering || this instanceof ArArchiveDiff);
+        Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorBefore = iterateAllEntries(archiveStreamBefore, sortInputArchives);
+        Iterator<ArchiveEntryWithData<GenArchiveEntry>> iteratorAfter = iterateAllEntries(archiveStreamAfter, sortInputArchives);
 
         ArchiveEntryWithData<GenArchiveEntry> entryBefore = iteratorBefore.hasNext() ? iteratorBefore.next() : null;
         ArchiveEntryWithData<GenArchiveEntry> entryAfter = iteratorAfter.hasNext() ? iteratorAfter.next() : null;
@@ -78,6 +74,51 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
         diffStream.writeByte(0);
     }
 
+    default Iterator<ArchiveEntryWithData<GenArchiveEntry>> iterateAllEntries(ArchiveInputStream archiveInputStream, boolean sort) throws IOException {
+        if (sort) {
+            List<ArchiveEntryWithData<GenArchiveEntry>> entries = listAllEntries(archiveInputStream, true);
+            return entries.iterator();
+        } else {
+            return iterateAllEntries(archiveInputStream);
+        }
+    }
+
+    default Iterator<ArchiveEntryWithData<GenArchiveEntry>> iterateAllEntries(ArchiveInputStream archiveInputStream) throws IOException {
+        return new Iterator<ArchiveEntryWithData<GenArchiveEntry>>() {
+            GenArchiveEntry entry = getNextEntry(archiveInputStream);
+
+            @Override
+            public boolean hasNext() {
+                return entry != null;
+            }
+
+            @Override
+            public ArchiveEntryWithData<GenArchiveEntry> next() {
+                try {
+                    ArchiveEntryWithData<GenArchiveEntry> entryWithData = new ArchiveEntryWithData<>(entry, IOUtils.toByteArray(archiveInputStream));
+                    entry = getNextEntry(archiveInputStream);
+                    return entryWithData;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+    }
+
+    default List<ArchiveEntryWithData<GenArchiveEntry>> listAllEntries(ArchiveInputStream archiveInputStream, boolean sort) throws IOException {
+        List<ArchiveEntryWithData<GenArchiveEntry>> entries = new ArrayList<>();
+        GenArchiveEntry entry = getNextEntry(archiveInputStream);
+        while (entry != null) {
+            entries.add(new ArchiveEntryWithData<>(entry, IOUtils.toByteArray(archiveInputStream)));
+            entry = getNextEntry(archiveInputStream);
+        }
+
+        if (sort) {
+            Collections.sort(entries, archiveEntryComparator());
+        }
+
+        return entries;
+    }
 
     default void writeEntryRemoved(GenArchiveEntry entry, DataOutputStream diffStream) throws IOException {
         diffStream.writeByte(ArchiveDiff.COMMAND_REMOVE);

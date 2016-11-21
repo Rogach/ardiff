@@ -7,7 +7,8 @@ import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
 
 public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
 
@@ -31,22 +32,6 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
     @SuppressWarnings("unchecked")
     default GenArchiveEntry getNextEntry(ArchiveInputStream archiveInputStream) throws IOException {
         return (GenArchiveEntry) archiveInputStream.getNextEntry();
-    }
-
-    default List<ArchiveEntryWithData<GenArchiveEntry>> listAllEntries(ArchiveInputStream archiveInputStream, boolean sort) throws IOException {
-
-        List<ArchiveEntryWithData<GenArchiveEntry>> entries = new ArrayList<>();
-        GenArchiveEntry entry = getNextEntry(archiveInputStream);
-        while (entry != null) {
-            entries.add(new ArchiveEntryWithData<>(entry, IOUtils.toByteArray(archiveInputStream)));
-            entry = getNextEntry(archiveInputStream);
-        }
-
-        if (sort) {
-            Collections.sort(entries, archiveEntryComparator());
-        }
-
-        return entries;
     }
 
     default HashMap<String, ArchiveEntryWithData<GenArchiveEntry>> readAllEntries(ArchiveInputStream archiveInputStream) throws IOException {
