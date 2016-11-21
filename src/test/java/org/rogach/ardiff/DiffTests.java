@@ -3,15 +3,13 @@ package org.rogach.ardiff;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -63,18 +61,30 @@ public class DiffTests {
         byte[] after = IOUtils.toByteArray(afterStream);
         afterStream.close();
 
-        ByteArrayOutputStream sortedOutputStream = new ByteArrayOutputStream();
-        ArchiveDiff.sortArchiveEntries(
-                new ByteArrayInputStream(before),
-                sortedOutputStream
-        );
-        sortedOutputStream.close();
-        byte[] sortedBefore = sortedOutputStream.toByteArray();
+        byte[] sortedBefore = null;
+        byte[] sortedAfter = null;
+        if (assumeOrdering) {
+            ByteArrayOutputStream sortedBeforeOutputStream = new ByteArrayOutputStream();
+            ArchiveDiff.sortArchiveEntries(
+                    new ByteArrayInputStream(before),
+                    sortedBeforeOutputStream
+            );
+            sortedBeforeOutputStream.close();
+            sortedBefore = sortedBeforeOutputStream.toByteArray();
+
+            ByteArrayOutputStream sortedAfterOutputStream = new ByteArrayOutputStream();
+            ArchiveDiff.sortArchiveEntries(
+                    new ByteArrayInputStream(after),
+                    sortedAfterOutputStream
+            );
+            sortedAfterOutputStream.close();
+            sortedAfter = sortedAfterOutputStream.toByteArray();
+        }
 
         ByteArrayOutputStream diffOutputStream = new ByteArrayOutputStream();
         ArchiveDiff.computeDiff(
-                new ByteArrayInputStream(before),
-                new ByteArrayInputStream(after),
+                new ByteArrayInputStream(assumeOrdering ? sortedBefore : before),
+                new ByteArrayInputStream(assumeOrdering ? sortedAfter : after),
                 diffOutputStream,
                 assumeOrdering
         );
@@ -93,9 +103,17 @@ public class DiffTests {
 
         byte[] result = resultOutputStream.toByteArray();
 
-        Assert.assertTrue(
-                String.format("diff-apply invariant failed between %s and %s", resourceBefore, resourceAfter),
-                ArchiveDiff.archivesAreEqual(new ByteArrayInputStream(after), new ByteArrayInputStream(result)));
+        if (assumeOrdering) {
+            FileUtils.writeByteArrayToFile(new File("target/sortedAfter.zip"), sortedAfter);
+            FileUtils.writeByteArrayToFile(new File("target/result.zip"), result);
+            Assert.assertArrayEquals(
+                    String.format("diff-apply result byte array equality invariant failed between %s and %s", resourceBefore, resourceAfter),
+                    sortedAfter, result);
+        } else {
+            Assert.assertTrue(
+                    String.format("diff-apply archive equality invariant failed between %s and %s", resourceBefore, resourceAfter),
+                    ArchiveDiff.archivesAreEqual(new ByteArrayInputStream(after), new ByteArrayInputStream(result)));
+        }
     }
 
     @Test
