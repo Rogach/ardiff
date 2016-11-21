@@ -2,6 +2,8 @@ name := """ardiff"""
 
 autoScalaLibrary := false
 
+crossPaths := false
+
 javacOptions ++= Seq("-Xlint:unchecked")
 
 libraryDependencies ++= Seq(
