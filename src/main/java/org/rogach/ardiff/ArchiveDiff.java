@@ -13,12 +13,10 @@ import org.rogach.ardiff.formats.ArArchiveDiff;
 import org.rogach.ardiff.formats.TarArchiveDiff;
 import org.rogach.ardiff.formats.ZipArchiveDiff;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Objects;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
         implements ArchiveDiffWriter<GenArchiveEntry>, ArchiveDiffReader<GenArchiveEntry>, ArchiveComparator<GenArchiveEntry>, ArchiveEntrySorter<GenArchiveEntry> {
@@ -205,5 +203,76 @@ public abstract class ArchiveDiff<GenArchiveEntry extends ArchiveEntry>
         }
     }
 
+    public static void main(String[] args) throws IOException, ArchiveDiffException, ArchiveException {
+        if (args.length == 4 && args[0].equals("compute")) {
+            OutputStream output = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(args[3])));
+            ArchiveDiff.computeDiff(
+                    new BufferedInputStream(new FileInputStream(args[1])),
+                    new BufferedInputStream(new FileInputStream(args[2])),
+                    output
+            );
+            output.close();
+        } else if (args.length == 5 && args[0].equals("compute") && args[1].equals("--sorted")) {
+            OutputStream output = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(args[4])));
+            ArchiveDiff.computeDiff(
+                    new BufferedInputStream(new FileInputStream(args[2])),
+                    new BufferedInputStream(new FileInputStream(args[3])),
+                    output,
+                    true
+            );
+            output.close();
+        } else if (args.length == 4 && args[0].equals("apply")) {
+            OutputStream output = new BufferedOutputStream(new FileOutputStream(args[3]));
+            ArchiveDiff.applyDiff(
+                    new BufferedInputStream(new FileInputStream(args[1])),
+                    new GZIPInputStream(new BufferedInputStream(new FileInputStream(args[2]))),
+                    output
+            );
+            output.close();
+        } else if (args.length == 5 && args[0].equals("apply") && args[1].equals("--sorted")) {
+            OutputStream output = new BufferedOutputStream(new FileOutputStream(args[4]));
+            ArchiveDiff.applyDiff(
+                    new BufferedInputStream(new FileInputStream(args[2])),
+                    new GZIPInputStream(new BufferedInputStream(new FileInputStream(args[3]))),
+                    output,
+                    true
+            );
+            output.close();
+        } else if (args.length == 3 && args[0].equals("sort")) {
+            OutputStream output = new BufferedOutputStream(new FileOutputStream(args[2]));
+            ArchiveDiff.sortArchiveEntries(
+                    new BufferedInputStream(new FileInputStream(args[1])),
+                    output
+            );
+            output.close();
+        } else {
+            System.out.println(String.join(
+                    "\n",
+                    "ArchiveDiff",
+                    "",
+                    "Usage:",
+                    "",
+                    "  java -jar ArchiveDiff.jar <command> [args...]",
+                    "",
+                    "Commands:",
+                    "",
+                    "  compute [--sorted] <before> <after> <diff>     Compute archive difference between <before> and <after>, store in <patch>.",
+                    "                                                 If --sorted is provided, assumes that input archives were pre-sorted and",
+                    "                                                 switches memory-efficient streaming mode which ensures binary equality of",
+                    "                                                 patched archive to original <after> archive.",
+                    "",
+                    "  apply [--sorted] <before> <diff> <after>       Apply previously computed <diff> to <before> file, outputting patched archive",
+                    "                                                 to <after>. If --sorted is provided, assumes that <before> archive is pre-sorted",
+                    "                                                 and <diff> was also computed with --sorted on. In that case memory-efficient",
+                    "                                                 streaming mode is used, and generated patched <after> will be binary equal to",
+                    "                                                 original <after> archive.",
+                    "",
+                    "  sort <input> <output>                          Repack archive. Sorts entries by names inside the archive (except for AR format),",
+                    "                                                 normalizes compression and entry headers. Archives that were preprocessed with",
+                    "                                                 this option can be later passed into `compute` and `apply`, allowing for",
+                    "                                                 faster computation and binary-equal archive patches."
+            ));
+        }
+    }
 
 }

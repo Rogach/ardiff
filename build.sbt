@@ -12,3 +12,9 @@ libraryDependencies ++= Seq(
   "com.novocode" % "junit-interface" % "0.11" % "test",
   "commons-io" % "commons-io" % "2.5" % "test"
 )
+
+assemblyJarName in assembly := "ArchiveDiff.jar"
+
+mainClass in assembly := Some("org.rogach.ardiff.ArchiveDiff")
+
+test in assembly := {}
