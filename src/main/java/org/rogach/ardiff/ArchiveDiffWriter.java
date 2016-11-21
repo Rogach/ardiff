@@ -180,20 +180,27 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
                 byte[] nestedArchiveDiff = diffByteArrayOutputStream.toByteArray();
 
-                ByteArrayOutputStream recompressByteArrayOutputStream = new ByteArrayOutputStream();
-                ArchiveDiff.applyDiff(
-                        new ByteArrayInputStream(beforeData),
-                        new ByteArrayInputStream(nestedArchiveDiff),
-                        recompressByteArrayOutputStream,
-                        assumeOrdering
-                );
-                recompressByteArrayOutputStream.close();
+                byte[] recompressedData;
 
-                byte[] recompress = recompressByteArrayOutputStream.toByteArray();
+                if (assumeOrdering) {
+                    // sorted archives result in binary-equal patched archives,
+                    // so we do not need to recompress data here
+                    recompressedData = entryAfter.data;
+                } else {
+                    ByteArrayOutputStream recompressByteArrayOutputStream = new ByteArrayOutputStream();
+                    ArchiveDiff.applyDiff(
+                            new ByteArrayInputStream(beforeData),
+                            new ByteArrayInputStream(nestedArchiveDiff),
+                            recompressByteArrayOutputStream,
+                            assumeOrdering
+                    );
+                    recompressByteArrayOutputStream.close();
+                    recompressedData = recompressByteArrayOutputStream.toByteArray();
+                }
 
-                diffStream.writeInt(recompress.length);
+                diffStream.writeInt(recompressedData.length);
 
-                writeEntryChecksum(recompress, diffStream);
+                writeEntryChecksum(recompressedData, diffStream);
 
                 writeAttributesDiff(entryBefore.entry, entryAfter.entry, diffStream);
 
