@@ -18,6 +18,7 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     static final byte ATTR_TIME = 4;
     static final byte ATTR_INTERNAL_ATTRIBUTES = 5;
     static final byte ATTR_EXTERNAL_ATTRIBUTES = 6;
+    static final byte ATTR_METHOD = 7;
 
     @Override
     public String archiverName() {
@@ -46,6 +47,7 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
         writeAttribute(ATTR_TIME, entry.getTime(), diffStream);
         writeAttribute(ATTR_INTERNAL_ATTRIBUTES, entry.getInternalAttributes(), diffStream);
         writeAttribute(ATTR_EXTERNAL_ATTRIBUTES, entry.getExternalAttributes(), diffStream);
+        writeAttribute(ATTR_METHOD, entry.getMethod(), diffStream);
         diffStream.writeByte(0);
     }
 
@@ -60,6 +62,7 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
                 case ATTR_TIME: entry.setTime(diffStream.readLong()); break;
                 case ATTR_INTERNAL_ATTRIBUTES: entry.setInternalAttributes(diffStream.readInt()); break;
                 case ATTR_EXTERNAL_ATTRIBUTES: entry.setExternalAttributes(diffStream.readLong()); break;
+                case ATTR_METHOD: entry.setMethod(diffStream.readInt()); break;
             }
         } while (true);
     }
@@ -71,7 +74,8 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
                 entryBefore.getVersionMadeBy() == entryAfter.getVersionMadeBy() &&
                 entryBefore.getTime() == entryAfter.getTime() &&
                 entryBefore.getInternalAttributes() == entryAfter.getInternalAttributes() &&
-                entryBefore.getExternalAttributes() == entryAfter.getExternalAttributes();
+                entryBefore.getExternalAttributes() == entryAfter.getExternalAttributes() &&
+                entryBefore.getMethod() == entryAfter.getMethod();
     }
 
     @Override
@@ -82,6 +86,7 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
         diffAttributes(ATTR_TIME, entryBefore.getTime(), entryAfter.getTime(), diffStream);
         diffAttributes(ATTR_INTERNAL_ATTRIBUTES, entryBefore.getInternalAttributes(), entryAfter.getInternalAttributes(), diffStream);
         diffAttributes(ATTR_EXTERNAL_ATTRIBUTES, entryBefore.getExternalAttributes(), entryAfter.getExternalAttributes(), diffStream);
+        diffAttributes(ATTR_METHOD, entryBefore.getMethod(), entryAfter.getMethod(), diffStream);
         diffStream.writeByte(0);
     }
 
