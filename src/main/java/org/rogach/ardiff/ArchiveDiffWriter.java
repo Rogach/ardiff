@@ -170,16 +170,6 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
 
                 byte[] beforeData = entryBefore.data;
 
-                if (assumeOrdering) {
-                    ByteArrayOutputStream sortedBeforeOutputStream = new ByteArrayOutputStream();
-                    ArchiveDiff.sortArchiveEntries(
-                            new ByteArrayInputStream(entryBefore.data),
-                            sortedBeforeOutputStream
-                    );
-                    sortedBeforeOutputStream.close();
-                    beforeData = sortedBeforeOutputStream.toByteArray();
-                }
-
                 ByteArrayOutputStream diffByteArrayOutputStream = new ByteArrayOutputStream();
                 ArchiveDiff.computeDiff(
                         new ByteArrayInputStream(beforeData),
