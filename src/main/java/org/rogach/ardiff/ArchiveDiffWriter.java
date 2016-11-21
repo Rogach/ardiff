@@ -178,7 +178,8 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                 ArchiveDiff.computeDiff(
                         new BufferedInputStream(entryBefore.dataStreamOpt.get(), 4096),
                         new BufferedInputStream(dataAfterCheckedStream, 4096),
-                        diffByteArrayOutputStream
+                        diffByteArrayOutputStream,
+                        true
                 );
                 diffByteArrayOutputStream.close();
 
@@ -212,8 +213,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
                 ArchiveDiff.applyDiff(
                         new ByteArrayInputStream(dataBefore),
                         new ByteArrayInputStream(nestedArchiveDiff),
-                        recompressByteArrayOutputStream,
-                        assumeOrdering
+                        recompressByteArrayOutputStream
                 );
                 recompressByteArrayOutputStream.close();
                 byte[] recompressedData = recompressByteArrayOutputStream.toByteArray();
