@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.zip.CRC32;
 
 public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
 
@@ -102,13 +101,11 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    public ZipArchiveEntry getEntryForData(ZipArchiveEntry entry, byte[] data) {
-        CRC32 checksum = new CRC32();
-        checksum.update(data);
-
-        entry.setCrc(checksum.getValue());
-        entry.setSize(data.length);
+    public ZipArchiveEntry getEntryForData(ZipArchiveEntry entry, int dataSize, Supplier<Long> checksumSupplier) throws IOException {
+        entry.setSize(dataSize);
+        entry.setCrc(checksumSupplier.get());
         return entry;
     }
+
 }
 

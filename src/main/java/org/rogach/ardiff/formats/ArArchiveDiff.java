@@ -6,6 +6,7 @@ import org.rogach.ardiff.ArchiveDiff;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.function.Supplier;
 
 public class ArArchiveDiff extends ArchiveDiff<ArArchiveEntry> {
 
@@ -77,8 +78,10 @@ public class ArArchiveDiff extends ArchiveDiff<ArArchiveEntry> {
         diffStream.writeByte(0);
     }
 
+
     @Override
-    public ArArchiveEntry getEntryForData(ArArchiveEntry entry, byte[] data) {
-        return copyArchiveEntry(entry, data.length);
+    public ArArchiveEntry getEntryForData(ArArchiveEntry entry, int dataSize, Supplier<Long> checksumSupplier) throws IOException {
+        return copyArchiveEntry(entry, dataSize);
     }
+
 }

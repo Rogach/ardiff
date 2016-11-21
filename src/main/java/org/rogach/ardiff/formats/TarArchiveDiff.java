@@ -15,6 +15,7 @@ import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import java.io.*;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -171,8 +172,8 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
     }
 
     @Override
-    public TarArchiveEntry getEntryForData(TarArchiveEntry entry, byte[] data) throws IOException {
-        return copyArchiveEntry(entry, data.length);
+    public TarArchiveEntry getEntryForData(TarArchiveEntry entry, int dataSize, Supplier<Long> checksumSupplier) throws IOException {
+        return copyArchiveEntry(entry, dataSize);
     }
 
 }
