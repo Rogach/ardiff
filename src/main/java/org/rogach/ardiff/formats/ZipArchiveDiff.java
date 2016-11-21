@@ -8,6 +8,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.zip.CRC32;
 
 public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
@@ -96,11 +97,8 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
-    public void writeEntryChecksum(byte[] data, DataOutputStream diffStream) throws IOException {
-        CRC32 checksum = new CRC32();
-        checksum.update(data);
-
-        diffStream.writeLong(checksum.getValue());
+    public void writeEntryChecksum(Supplier<Long> checksumSupplier, DataOutputStream diffStream) throws IOException {
+        diffStream.writeLong(checksumSupplier.get());
     }
 
     @Override

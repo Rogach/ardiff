@@ -40,7 +40,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
 
         // we must not sort AR, because dpkg explicitly specifies archive entry order
         if (!(this instanceof ArArchiveDiff)) {
-            Collections.sort(entries, archiveEntryComparator());
+            Collections.sort(entries);
         }
 
         ArchiveOutputStream archiveOutputStream = createArchiveOutputStream(output);

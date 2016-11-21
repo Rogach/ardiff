@@ -7,7 +7,6 @@ import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Comparator;
 import java.util.HashMap;
 
 public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
@@ -42,10 +41,6 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
             entry = getNextEntry(archiveInputStream);
         }
         return entries;
-    }
-
-    default Comparator<ArchiveEntryWithData<GenArchiveEntry>> archiveEntryComparator() {
-        return (o1, o2) -> o1.entry.getName().compareTo(o2.entry.getName());
     }
 
 }
