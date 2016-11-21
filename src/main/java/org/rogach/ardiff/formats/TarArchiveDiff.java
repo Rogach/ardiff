@@ -13,6 +13,7 @@ import org.rogach.ardiff.ArchiveDiff;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -94,6 +95,16 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
     public TarArchiveEntry copyArchiveEntry(TarArchiveEntry orig, int length) throws IOException {
         byte[] header = new byte[TarConstants.DEFAULT_RCDSIZE];
         orig.writeEntryHeader(header);
+
+        // change entry format to POSIX
+        // commons-io does not care about version when reading or writing archive entries,
+        // so we can simply change the bytes here
+        if (Arrays.equals(Arrays.copyOfRange(header, 257, 257 + 6), "ustar ".getBytes("ASCII"))) {
+            header[262] = 0;
+            header[263] = '0';
+            header[264] = '0';
+        }
+
         TarArchiveEntry newEntry = new TarArchiveEntry(header);
         newEntry.setSize(length);
         return newEntry;
@@ -160,9 +171,8 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
     }
 
     @Override
-    public TarArchiveEntry getEntryForData(TarArchiveEntry entry, byte[] data) {
-        entry.setSize(data.length);
-        return entry;
+    public TarArchiveEntry getEntryForData(TarArchiveEntry entry, byte[] data) throws IOException {
+        return copyArchiveEntry(entry, data.length);
     }
 
 }

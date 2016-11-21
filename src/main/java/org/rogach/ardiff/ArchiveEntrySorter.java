@@ -54,6 +54,6 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
         finishArchiveOutputStream(archiveOutputStream);
     }
 
-    GenArchiveEntry getEntryForData(GenArchiveEntry entry, byte[] data);
+    GenArchiveEntry getEntryForData(GenArchiveEntry entry, byte[] data) throws IOException;
 
 }
