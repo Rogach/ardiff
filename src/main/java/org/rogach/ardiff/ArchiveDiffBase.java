@@ -13,6 +13,8 @@ public interface ArchiveDiffBase<GenArchiveEntry extends ArchiveEntry> {
 
     String archiverName();
 
+    boolean supportsSorting();
+
     default ArchiveOutputStream createArchiveOutputStream(OutputStream output) throws IOException, ArchiveDiffException, ArchiveException {
         return new ArchiveStreamFactory().createArchiveOutputStream(archiverName(), output);
     }

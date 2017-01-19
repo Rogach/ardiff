@@ -24,9 +24,6 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
         ArchiveInputStream archiveInputStream = createArchiveInputStream(input);
         ArchiveOutputStream archiveOutputStream = createArchiveOutputStream(output);
 
-        // we must not sort AR, because dpkg explicitly specifies DEB archive entry order
-        boolean doSortEntries = !(this instanceof ArArchiveDiff);
-
         List<ArchiveEntryWithData<GenArchiveEntry>> entries = new ArrayList<>();
         GenArchiveEntry entry = getNextEntry(archiveInputStream);
         while (entry != null) {
@@ -38,7 +35,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
                 );
                 sortedArchiveOutputStream.close();
 
-                if (!doSortEntries) {
+                if (!supportsSorting()) {
                     archiveOutputStream.putArchiveEntry(
                             getEntryForData(entry, sortedArchiveOutputStream.size(), () -> ArchiveDiffUtils.computeCRC32Checksum(sortedArchiveOutputStream.toInputStream())));
 
@@ -49,7 +46,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
                 }
             } else {
                 byte[] data = IOUtils.toByteArray(archiveInputStream);
-                if (!doSortEntries) {
+                if (!supportsSorting()) {
                     archiveOutputStream.putArchiveEntry(getEntryForData(entry, data.length, () -> ArchiveDiffUtils.computeCRC32Checksum(data)));
                     archiveOutputStream.write(data);
                     archiveOutputStream.closeArchiveEntry();
@@ -61,7 +58,7 @@ public interface ArchiveEntrySorter<GenArchiveEntry extends ArchiveEntry> extend
         }
 
 
-        if (doSortEntries) {
+        if (supportsSorting()) {
             Collections.sort(entries);
             for (ArchiveEntryWithData<GenArchiveEntry> archiveEntry : entries) {
                 archiveOutputStream.putArchiveEntry(

@@ -42,6 +42,11 @@ public class TarArchiveDiff extends ArchiveDiff<TarArchiveEntry> {
         return "tar";
     }
 
+    @Override
+    public boolean supportsSorting() {
+        return true;
+    }
+
     private GZIPOutputStream gzipOutputStream;
 
     @Override

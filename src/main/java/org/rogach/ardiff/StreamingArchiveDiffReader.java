@@ -11,6 +11,7 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.rogach.ardiff.exceptions.ArchiveDiffCorruptedException;
 import org.rogach.ardiff.exceptions.ArchiveDiffException;
 import org.rogach.ardiff.exceptions.ArchiveDiffFormatException;
+import org.rogach.ardiff.formats.ArArchiveDiff;
 
 import java.io.*;
 import java.util.Arrays;
@@ -73,10 +74,10 @@ public class StreamingArchiveDiffReader<GenArchiveEntry extends ArchiveEntry> {
                 }
             } else {
                 int entryOrder = entry.getName().compareTo(commandPath);
-                if (entryOrder < 0) {
+                if ((utils.supportsSorting() && entryOrder < 0) || (!utils.supportsSorting() && entryOrder != 0)) {
                     copyUnchangedEntry();
                     readNextEntry();
-                } else if (entryOrder > 0) {
+                } else if (utils.supportsSorting() && entryOrder > 0) {
                     if (command == ArchiveDiff.COMMAND_ADD) {
                         addEntry();
                         validateChecksum();

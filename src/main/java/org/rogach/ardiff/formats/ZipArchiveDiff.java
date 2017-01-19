@@ -26,6 +26,11 @@ public class ZipArchiveDiff extends ArchiveDiff<ZipArchiveEntry> {
     }
 
     @Override
+    public boolean supportsSorting() {
+        return true;
+    }
+
+    @Override
     public ZipArchiveEntry createNewArchiveEntry(String path, int length) {
         ZipArchiveEntry newEntry = new ZipArchiveEntry(path);
         newEntry.setSize(length);

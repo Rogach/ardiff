@@ -20,6 +20,11 @@ public class ArArchiveDiff extends ArchiveDiff<ArArchiveEntry> {
         return "ar";
     }
 
+    @Override
+    public boolean supportsSorting() {
+        // we must not sort AR, because dpkg explicitly specifies DEB archive entry order
+        return false;
+    }
 
     @Override
     public ArArchiveEntry createNewArchiveEntry(String path, int length) {

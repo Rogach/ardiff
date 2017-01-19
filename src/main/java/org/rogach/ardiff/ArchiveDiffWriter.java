@@ -32,7 +32,7 @@ public interface ArchiveDiffWriter<GenArchiveEntry extends ArchiveEntry>
         DataOutputStream diffStream = new DataOutputStream(checkedDiffStream);
         diffStream.write(ArchiveDiff.HEADER.getBytes("ASCII"));
 
-        boolean sortInputArchives = !(assumeOrdering || this instanceof ArArchiveDiff);
+        boolean sortInputArchives = !(assumeOrdering || !this.supportsSorting());
         Iterator<ArchiveEntryWithDataStream<GenArchiveEntry>> iteratorBefore = iterateAllEntries(archiveStreamBefore, sortInputArchives);
         Iterator<ArchiveEntryWithDataStream<GenArchiveEntry>> iteratorAfter = iterateAllEntries(archiveStreamAfter, sortInputArchives);
 
